@@ -83,6 +83,17 @@
                         <option value="cash" @selected($mode == 'cash')>💸 Fecha de Pago (Caja)</option>
                     </select>
                 </div>
+                <div>
+                    <label for="r_status">Estatus:</label>
+                    <select id="r_status" name="status" style="background:var(--light); border-color:#cbd5e1;">
+                        <option value="">Todos los estatus</option>
+                        <option value="pending" @selected($status == 'pending')>⏳ Por Facturar</option>
+                        <option value="invoiced" @selected($status == 'invoiced')>🟦 Facturado</option>
+                        <option value="paid" @selected($status == 'paid')>🟩 Pagado</option>
+                        <option value="partial" @selected($status == 'partial')>🟪 Parcial</option>
+                        <option value="overdue" @selected($status == 'overdue')>🟥 Vencido</option>
+                    </select>
+                </div>
                 <button class="btn btn-primary">Actualizar</button>
             </div>
         </form>

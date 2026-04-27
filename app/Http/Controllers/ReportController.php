@@ -19,6 +19,7 @@ class ReportController extends Controller
         $month = (int) $request->get('month', $now->month);
         $year  = (int) $request->get('year',  $now->year);
         $mode  = $request->get('mode', 'accrual'); // 'accrual' (Vencimiento) o 'cash' (Flujo de Caja)
+        $status = $request->get('status');
 
         $monthStr = str_pad($month, 2, '0', STR_PAD_LEFT);
 
@@ -37,9 +38,12 @@ class ReportController extends Controller
                   });
             });
         } else {
-            // Modo Vencimiento (Tradicional): Pagos que corresponden a este mes
             $paymentsQuery->whereYear('due_date', $year)
                           ->whereMonth('due_date', $month);
+        }
+
+        if ($request->filled('status')) {
+            $paymentsQuery->where('status', $request->status);
         }
 
         $payments = $paymentsQuery->get();
@@ -212,7 +216,7 @@ class ReportController extends Controller
             ->value('min_year') ?? $now->year;
 
         return view('reports.income', compact(
-            'month', 'year', 'mode', 'payments',
+            'month', 'year', 'mode', 'status', 'payments',
             'totalPaid', 'totalPending', 'totalDeposits', 'depositLeases',
             'byProperty', 'byBeneficiary', 'firstYear',
             'expenses', 'totalExpenses', 'expensesByCategory', 'expensesByProperty', 'netIncome',
@@ -226,6 +230,7 @@ class ReportController extends Controller
         $month = (int) $request->get('month', $now->month);
         $year  = (int) $request->get('year',  $now->year);
         $mode  = $request->get('mode', 'accrual');
+        $status = $request->get('status');
 
         $paymentsQuery = Payment::with(['lease.unit.property', 'lease.unit.beneficiary', 'lease.tenant'])
             ->whereNotNull('due_date');
@@ -241,6 +246,10 @@ class ReportController extends Controller
         } else {
             $paymentsQuery->whereYear('due_date', $year)
                           ->whereMonth('due_date', $month);
+        }
+
+        if ($request->filled('status')) {
+            $paymentsQuery->where('status', $request->status);
         }
 
         $payments = $paymentsQuery->get()->sortBy(fn($p) => $p->lease->unit->property->name ?? '');
