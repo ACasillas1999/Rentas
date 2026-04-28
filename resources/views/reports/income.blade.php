@@ -56,7 +56,7 @@
 
     {{-- Filtros --}}
     <div class="card" style="margin-bottom:1.5rem;">
-        <form method="GET" action="{{ route('reports.income') }}" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+        <form method="GET" action="{{ route('reports.income') }}" class="form-grid" style="align-items: flex-end;">
             <div>
                 <label for="r_month">Mes</label>
                 <select id="r_month" name="month">
@@ -75,26 +75,26 @@
                     @endfor
                 </select>
             </div>
-            <div style="flex-grow:1; display:flex; gap:1rem; align-items:flex-end;">
-                <div>
-                    <label for="r_mode">Ver por:</label>
-                    <select id="r_mode" name="mode" style="background:var(--light); border-color:#cbd5e1; font-weight:600;">
-                        <option value="accrual" @selected($mode == 'accrual')>📅 Vencimiento (Devengado)</option>
-                        <option value="cash" @selected($mode == 'cash')>💸 Fecha de Pago (Caja)</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="r_status">Estatus:</label>
-                    <select id="r_status" name="status" style="background:var(--light); border-color:#cbd5e1;">
-                        <option value="">Todos los estatus</option>
-                        <option value="pending" @selected($status == 'pending')>⏳ Por Facturar</option>
-                        <option value="invoiced" @selected($status == 'invoiced')>🟦 Facturado</option>
-                        <option value="paid" @selected($status == 'paid')>🟩 Pagado</option>
-                        <option value="partial" @selected($status == 'partial')>🟪 Parcial</option>
-                        <option value="overdue" @selected($status == 'overdue')>🟥 Vencido</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary">Actualizar</button>
+            <div>
+                <label for="r_mode">Ver por:</label>
+                <select id="r_mode" name="mode" style="background:var(--light); border-color:#cbd5e1; font-weight:600;">
+                    <option value="accrual" @selected($mode == 'accrual')>📅 Vencimiento</option>
+                    <option value="cash" @selected($mode == 'cash')>💸 Fecha de Pago</option>
+                </select>
+            </div>
+            <div>
+                <label for="r_status">Estatus:</label>
+                <select id="r_status" name="status" style="background:var(--light); border-color:#cbd5e1;">
+                    <option value="">Todos los estatus</option>
+                    <option value="pending" @selected($status == 'pending')>⏳ Por Facturar</option>
+                    <option value="invoiced" @selected($status == 'invoiced')>🟦 Facturado</option>
+                    <option value="paid" @selected($status == 'paid')>🟩 Pagado</option>
+                    <option value="partial" @selected($status == 'partial')>🟪 Parcial</option>
+                    <option value="overdue" @selected($status == 'overdue')>🟥 Vencido</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary" style="flex: 1;">Actualizar</button>
             </div>
         </form>
     </div>
@@ -225,6 +225,7 @@
         <div class="card" style="margin-bottom:1.5rem; border-top: 4px solid #3b82f6;">
             <h3 style="margin-top:0; font-size:1rem; color:#1e40af;">🔑 Detalle de Depósitos de Garantía</h3>
             <p class="muted" style="font-size:0.85rem; margin-bottom:1rem;">Contratos nuevos que iniciaron en {{ $monthName }}</p>
+        <div class="payment-table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -250,45 +251,96 @@
                 </tbody>
             </table>
         </div>
+
+        {{-- Vista de tarjetas para depósitos en móvil --}}
+        <div class="lease-cards-grid" style="margin-top:0;">
+            @foreach($depositLeases as $dLease)
+                <div class="lease-card" style="border-left: 4px solid #3b82f6;">
+                    <div class="lease-card-head">
+                        <div class="lease-card-folio">Depósito de Garantía</div>
+                        <span class="badge badge-ok">Recibido</span>
+                    </div>
+                    <div class="lease-card-tenant">{{ $dLease->tenant->full_name ?? '-' }}</div>
+                    <div class="lease-card-unit">{{ $dLease->unit->property->name ?? '-' }} / {{ $dLease->unit->code ?? '-' }}</div>
+                    <div class="lease-card-info">
+                        <div>
+                            <div class="lease-card-label">Inicio</div>
+                            <div class="lease-card-value">{{ $dLease->start_date?->format('d/m/Y') }}</div>
+                        </div>
+                        <div>
+                            <div class="lease-card-label">Monto</div>
+                            <div class="lease-card-amount" style="color:#2563eb;">${{ number_format($dLease->deposit_amount, 2) }}</div>
+                        </div>
+                    </div>
+                    <a href="{{ route('leases.show', $dLease) }}" class="btn btn-light" style="width:100%; text-align:center;">Ver Contrato</a>
+                </div>
+            @endforeach
+        </div>
+        </div>
     @endif
     
     {{-- Resumen por beneficiario --}}
     <div class="card" style="margin-bottom:1.5rem; border-top: 4px solid var(--dark);">
         <h3 style="margin-top:0; font-size:1rem;">👤 Resumen por Beneficiario</h3>
         <p class="muted" style="font-size:0.85rem; margin-bottom:1rem;">Distribución de lo recaudado en {{ $monthName }}</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Beneficiario</th>
-                    <th>Montos Cobrados</th>
-                    <th>Pendientes</th>
-                    <th>Pagos</th>
-                    <th>Eficiencia</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($byBeneficiary as $beneficiaryName => $data)
-                    @php
-                        $beneficialPotential = $data['paid'] + $data['pending'];
-                        $beneficialPct = $beneficialPotential > 0 ? round($data['paid'] / $beneficialPotential * 100) : 0;
-                    @endphp
+        <div class="payment-table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td style="font-weight:600;">{{ $beneficiaryName }}</td>
-                        <td style="color:#1a7f3c; font-weight:700;">${{ number_format($data['paid'], 2) }}</td>
-                        <td style="color:#c47a0a;">${{ number_format($data['pending'], 2) }}</td>
-                        <td>{{ $data['count'] }}</td>
-                        <td>
-                            <div style="display:flex; align-items:center; gap:0.5rem;">
-                                <div style="flex-grow:1; height:6px; background:#e8edf3; border-radius:4px; overflow:hidden; min-width:60px;">
-                                    <div style="height:6px; width:{{ $beneficialPct }}%; background:#1a7f3c; border-radius:4px;"></div>
-                                </div>
-                                <span class="muted" style="font-size:0.75rem;">{{ $beneficialPct }}%</span>
-                            </div>
-                        </td>
+                        <th>Beneficiario</th>
+                        <th>Montos Cobrados</th>
+                        <th>Pendientes</th>
+                        <th>Pagos</th>
+                        <th>Eficiencia</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($byBeneficiary as $beneficiaryName => $data)
+                        @php
+                            $beneficialPotential = $data['paid'] + $data['pending'];
+                            $beneficialPct = $beneficialPotential > 0 ? round($data['paid'] / $beneficialPotential * 100) : 0;
+                        @endphp
+                        <tr>
+                            <td style="font-weight:600;">{{ $beneficiaryName }}</td>
+                            <td style="color:#1a7f3c; font-weight:700;">${{ number_format($data['paid'], 2) }}</td>
+                            <td style="color:#c47a0a;">${{ number_format($data['pending'], 2) }}</td>
+                            <td>{{ $data['count'] }}</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:0.5rem;">
+                                    <div style="flex-grow:1; height:6px; background:#e8edf3; border-radius:4px; overflow:hidden; min-width:60px;">
+                                        <div style="height:6px; width:{{ $beneficialPct }}%; background:#1a7f3c; border-radius:4px;"></div>
+                                    </div>
+                                    <span class="muted" style="font-size:0.75rem;">{{ $beneficialPct }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Vista de tarjetas para beneficiarios en móvil --}}
+        <div class="grid grid-2 payment-cards-grid" style="margin-top:0; gap:0.75rem;">
+            @foreach($byBeneficiary as $beneficiaryName => $data)
+                @php
+                    $beneficialPotential = $data['paid'] + $data['pending'];
+                    $beneficialPct = $beneficialPotential > 0 ? round($data['paid'] / $beneficialPotential * 100) : 0;
+                @endphp
+                <div class="payment-card" style="padding:0.85rem; background:var(--surface-soft);">
+                    <div style="font-weight:700; color:var(--text); margin-bottom:0.4rem;">{{ $beneficiaryName }}</div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.4rem;">
+                        <span style="color:#1a7f3c;">Cobrado: <b>${{ number_format($data['paid'], 2) }}</b></span>
+                        <span style="color:#c47a0a;">Pend: <b>${{ number_format($data['pending'], 2) }}</b></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div style="flex-grow:1; height:6px; background:#fff; border:1px solid var(--border); border-radius:4px; overflow:hidden;">
+                            <div style="height:100%; width:{{ $beneficialPct }}%; background:#1a7f3c;"></div>
+                        </div>
+                        <span style="font-size:0.7rem; font-weight:700;">{{ $beneficialPct }}%</span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
     </div>
 
     {{-- Desglose por propiedad --}}
@@ -312,84 +364,112 @@
                     </div>
                 </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Inquilino</th>
-                            <th>Tipo</th>
-                            <th>Unidad</th>
-                            <th>Período</th>
-                            <th>Vencimiento</th>
-                            <th>F. Factura</th>
-                            <th>Folio</th>
-                            <th>F. Pago</th>
-                            <th>Monto</th>
-                            <th>Recargo</th>
-                            <th>Estatus</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($data['payments']->sortBy('due_date') as $payment)
+                <div class="payment-table-wrap">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>{{ $payment->lease->tenant->full_name ?? '-' }}</td>
-                                <td>
-                                    @if($payment->type === 'maintenance')
-                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:0.7rem;">Mant.</span>
-                                    @else
-                                        <span class="badge" style="background:#f0fdf4;color:#15803d;font-size:0.7rem;">Renta</span>
-                                    @endif
-                                </td>
-                                <td>{{ $payment->lease->unit->code ?? '-' }}</td>
-                                <td>{{ $payment->period_label ?: '-' }}</td>
-                                <td style="font-size:0.8rem;">{{ $payment->due_date?->format('d/m/Y') }}</td>
-                                <td style="font-size:0.8rem;color:{{ $payment->invoiced_at ? '#1e40af' : '#94a3b8' }};font-weight:600;">
-                                    {{ $payment->invoiced_at?->format('d/m/Y') ?: '—' }}
-                                </td>
-                                <td style="font-size:0.78rem;font-family:monospace;color:#1e40af;">
-                                    {{ $payment->invoice_folio ?: '—' }}
-                                </td>
-                                <td style="font-size:0.8rem;font-weight:600;color:{{ $payment->paid_at ? '#1a7f3c' : '#94a3b8' }};">
-                                    {{ $payment->paid_at?->format('d/m/Y') ?: '—' }}
-                                </td>
-                                <td>${{ number_format((float)$payment->amount, 2) }}</td>
-                                <td>
-                                    @if((float)$payment->late_fee > 0)
-                                        <span style="color:#b82020;">${{ number_format((float)$payment->late_fee, 2) }}</span>
-                                    @else
-                                        <span class="muted">—</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($payment->status === 'paid')
-                                        <span class="badge" style="background:#dcfce7;color:#166534;">Pagado</span>
-                                    @elseif($payment->status === 'invoiced')
-                                        <span class="badge" style="background:#dbeafe;color:#1e40af;">Facturado</span>
-                                    @elseif($payment->status === 'partial')
-                                        <span class="badge" style="background:#eef2ff;color:#4338ca;">Parcial</span>
-                                    @elseif($payment->status === 'overdue')
-                                        <span class="badge" style="background:#fee2e2;color:#b91c1c;">Vencido</span>
-                                    @else
-                                        <span class="badge" style="background:#fef3c7;color:#92400e;">Por Facturar</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <a class="btn btn-light" href="{{ route('payments.show', $payment) }}">Ver</a>
+                                <th>Inquilino</th>
+                                <th>Tipo</th>
+                                <th>Unidad</th>
+                                <th>Período</th>
+                                <th>Vencimiento</th>
+                                <th>F. Factura</th>
+                                <th>Folio</th>
+                                <th>F. Pago</th>
+                                <th>Monto</th>
+                                <th>Recargo</th>
+                                <th>Estatus</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($data['payments']->sortBy('due_date') as $payment)
+                                <tr>
+                                    <td>{{ $payment->lease->tenant->full_name ?? '-' }}</td>
+                                    <td>
+                                        @if($payment->type === 'maintenance')
+                                            <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:0.7rem;">Mant.</span>
+                                        @else
+                                            <span class="badge" style="background:#f0fdf4;color:#15803d;font-size:0.7rem;">Renta</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $payment->lease->unit->code ?? '-' }}</td>
+                                    <td>{{ $payment->period_label ?: '-' }}</td>
+                                    <td style="font-size:0.8rem;">{{ $payment->due_date?->format('d/m/Y') }}</td>
+                                    <td style="font-size:0.8rem;color:{{ $payment->invoiced_at ? '#1e40af' : '#94a3b8' }};font-weight:600;">
+                                        {{ $payment->invoiced_at?->format('d/m/Y') ?: '—' }}
+                                    </td>
+                                    <td style="font-size:0.78rem;font-family:monospace;color:#1e40af;">
+                                        {{ $payment->invoice_folio ?: '—' }}
+                                    </td>
+                                    <td style="font-size:0.8rem;font-weight:600;color:{{ $payment->paid_at ? '#1a7f3c' : '#94a3b8' }};">
+                                        {{ $payment->paid_at?->format('d/m/Y') ?: '—' }}
+                                    </td>
+                                    <td>${{ number_format((float)$payment->amount, 2) }}</td>
+                                    <td>
+                                        @if((float)$payment->late_fee > 0)
+                                            <span style="color:#b82020;">${{ number_format((float)$payment->late_fee, 2) }}</span>
+                                        @else
+                                            <span class="muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($payment->status === 'paid')
+                                            <span class="badge" style="background:#dcfce7;color:#166534;">Pagado</span>
+                                        @elseif($payment->status === 'invoiced')
+                                            <span class="badge" style="background:#dbeafe;color:#1e40af;">Facturado</span>
+                                        @elseif($payment->status === 'partial')
+                                            <span class="badge" style="background:#eef2ff;color:#4338ca;">Parcial</span>
+                                        @elseif($payment->status === 'overdue')
+                                            <span class="badge" style="background:#fee2e2;color:#b91c1c;">Vencido</span>
+                                        @else
+                                            <span class="badge" style="background:#fef3c7;color:#92400e;">Por Facturar</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <a class="btn btn-light" href="{{ route('payments.show', $payment) }}">Ver</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr style="font-weight:600;background:#f6f8fc;">
+                                <td colspan="8" style="text-align:right;color:var(--muted);">Subtotal Propiedad</td>
+                                <td>${{ number_format($data['payments']->sum(fn($p) => (float)$p->amount), 2) }}</td>
+                                <td>${{ number_format($data['payments']->sum(fn($p) => (float)$p->late_fee), 2) }}</td>
+                                <td colspan="2" style="color:#1a7f3c;text-align:right;padding-right:2rem;">
+                                    {{ $mode === 'cash' ? 'Recaudado' : 'Cobrado' }}: ${{ number_format($data['paid'], 2) }}
                                 </td>
                             </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr style="font-weight:600;background:#f6f8fc;">
-                            <td colspan="8" style="text-align:right;color:var(--muted);">Subtotal Propiedad</td>
-                            <td>${{ number_format($data['payments']->sum(fn($p) => (float)$p->amount), 2) }}</td>
-                            <td>${{ number_format($data['payments']->sum(fn($p) => (float)$p->late_fee), 2) }}</td>
-                            <td colspan="2" style="color:#1a7f3c;text-align:right;padding-right:2rem;">
-                                {{ $mode === 'cash' ? 'Recaudado' : 'Cobrado' }}: ${{ number_format($data['paid'], 2) }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </tfoot>
+                    </table>
+                </div>
+
+                {{-- Vista de tarjetas para pagos por propiedad en móvil --}}
+                <div class="payment-cards-grid" style="margin-top:0;">
+                    @foreach($data['payments']->sortBy('due_date') as $payment)
+                        <div class="payment-card" style="border-radius:12px; border-left:4px solid {{ $payment->status === 'paid' ? '#10b981' : ($payment->status === 'overdue' ? '#ef4444' : '#f59e0b') }};">
+                            <div class="payment-card-status">
+                                @if($payment->status === 'paid') <span class="badge badge-ok">Pagado</span>
+                                @elseif($payment->status === 'overdue') <span class="badge badge-bad">Vencido</span>
+                                @else <span class="badge badge-warn">Pendiente</span> @endif
+                            </div>
+                            <div style="font-weight:700; color:var(--text);">{{ $payment->lease->tenant->full_name ?? '-' }}</div>
+                            <div style="font-size:0.85rem; color:var(--muted);">
+                                Unidad: <b>{{ $payment->lease->unit->code ?? '-' }}</b> | {{ $payment->period_label ?: '-' }}
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:0.4rem; border-top:1px solid var(--border); padding-top:0.4rem;">
+                                <div style="font-size:0.8rem; color:var(--muted);">Vence: {{ $payment->due_date?->format('d/m/y') }}</div>
+                                <div style="font-weight:800; color:var(--text);">${{ number_format((float)$payment->amount + (float)$payment->late_fee, 2) }}</div>
+                            </div>
+                            <a href="{{ route('payments.show', $payment) }}" class="btn btn-light" style="width:100%; text-align:center; margin-top:0.3rem; padding:0.4rem;">Ver Detalle</a>
+                        </div>
+                    @endforeach
+                    <div style="background:#f8fafc; border-radius:12px; padding:0.85rem; border:1px dashed #cbd5e1; display:flex; justify-content:space-between; font-weight:700; font-size:0.9rem;">
+                        <span style="color:var(--muted);">Subtotal {{ $propName }}</span>
+                        <span style="color:#1a7f3c;">${{ number_format($data['paid'], 2) }}</span>
+                    </div>
+                </div>
             </div>
         @endforeach
     @endif

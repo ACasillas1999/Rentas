@@ -95,7 +95,7 @@
         </form>
     </div>
 
-    <div class="card">
+    <div class="card payment-table-wrap">
         <p class="muted">Mostrando {{ $payments->firstItem() ?? 0 }} - {{ $payments->lastItem() ?? 0 }} de {{ $payments->total() }} pagos.</p>
         <table>
             <thead>
@@ -154,21 +154,62 @@
                         <td class="actions">
                             <a class="btn btn-light" href="{{ route('payments.show', $payment) }}">Ver</a>
                             <a class="btn btn-light" href="{{ route('payments.edit', $payment) }}">Editar</a>
-                            <form class="inline" method="POST" action="{{ route('payments.destroy', $payment) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-danger" onclick="return confirm('Eliminar pago?')">Eliminar</button>
-                            </form>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7">No hay pagos registrados con esos filtros.</td>
+                        <td colspan="8">No hay pagos registrados con esos filtros.</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
 
+        <div class="pagination">{{ $payments->links() }}</div>
+    </div>
+
+    {{-- Vista de Tarjetas para Móvil (Global) --}}
+    <div class="payment-cards-grid">
+        @forelse ($payments as $payment)
+            <div class="payment-card" style="background: var(--surface); box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-radius: 16px;">
+                <div class="payment-card-status">
+                    @if ($payment->status === 'paid')
+                        <span class="badge badge-ok">Pagado</span>
+                    @elseif ($payment->status === 'overdue')
+                        <span class="badge badge-bad">Vencido</span>
+                    @else
+                        <span class="badge badge-warn">Pendiente</span>
+                    @endif
+                </div>
+
+                <div class="payment-card-period">
+                    <span style="color: var(--primary);">{{ $payment->lease->contract_number ?? 'S/F' }}</span>
+                    <span class="payment-card-type" style="margin-left: 0.5rem;">{{ $payment->type === 'rent' ? 'Renta' : 'Mto.' }}</span>
+                </div>
+
+                <div style="font-weight: 700; font-size: 1.05rem; color: var(--text);">
+                    {{ $payment->lease->tenant->full_name ?? '-' }}
+                </div>
+
+                <div class="payment-card-dates" style="font-size: 0.85rem; color: var(--muted);">
+                    Periodo {{ $payment->period_number }}/{{ $payment->total_periods }}<br>
+                    {{ $payment->period_start?->locale('es')->isoFormat('D MMM') }} – {{ $payment->period_end?->locale('es')->isoFormat('D MMM YYYY') }}
+                </div>
+
+                <div class="payment-card-row" style="margin-top: 0.4rem; padding-top: 0.6rem; border-top: 1px solid var(--border);">
+                    <div style="font-size: 0.8rem; color: var(--muted);">Vence: {{ $payment->due_date?->format('d/m/y') }}</div>
+                    <div class="payment-card-amount" style="color: var(--text); font-size: 1.2rem;">${{ number_format((float) $payment->amount, 2) }}</div>
+                </div>
+
+                <div class="payment-card-actions" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <a href="{{ route('payments.show', $payment) }}" class="btn btn-primary" style="flex: 1; text-align: center;">Ver</a>
+                    <a href="{{ route('payments.edit', $payment) }}" class="btn btn-light" style="flex: 1; text-align: center;">Editar</a>
+                </div>
+            </div>
+        @empty
+            <div class="card" style="text-align: center; color: var(--muted); padding: 2rem;">
+                No hay pagos que mostrar.
+            </div>
+        @endforelse
         <div class="pagination">{{ $payments->links() }}</div>
     </div>
 @endsection

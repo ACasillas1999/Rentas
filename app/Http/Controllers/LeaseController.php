@@ -89,7 +89,7 @@ class LeaseController extends Controller
         }
 
         if ($request->hasFile('contract_pdf')) {
-            $data['contract_pdf'] = $request->file('contract_pdf')->store('leases', 'public');
+            $data['contract_pdf'] = $request->file('contract_pdf')->store('leases');
         }
 
         // Si no se especifica first_period_start, usar start_date
@@ -140,7 +140,7 @@ class LeaseController extends Controller
         }
 
         if ($request->hasFile('contract_pdf')) {
-            $data['contract_pdf'] = $request->file('contract_pdf')->store('leases', 'public');
+            $data['contract_pdf'] = $request->file('contract_pdf')->store('leases');
         }
 
         if (empty($data['first_period_start'])) {
@@ -224,7 +224,7 @@ class LeaseController extends Controller
             $data['previous_lease_id'] = $lease->id;
 
             if ($request->hasFile('contract_pdf')) {
-                $data['contract_pdf'] = $request->file('contract_pdf')->store('leases', 'public');
+                $data['contract_pdf'] = $request->file('contract_pdf')->store('leases');
             }
 
             if (empty($data['first_period_start'])) {

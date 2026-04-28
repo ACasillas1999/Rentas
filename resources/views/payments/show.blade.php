@@ -207,7 +207,7 @@
             @if(count($receipts))
                 <div style="margin-bottom:0.75rem;">
                     @foreach($receipts as $f)
-                        @php $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION)); $url = \Illuminate\Support\Facades\Storage::disk('public')->url($f); @endphp
+                        @php $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION)); $url = route('secure.download', ['file' => encrypt($f)]); @endphp
                         @if(in_array($ext, ['jpg','jpeg','png','webp','gif']))
                             <a href="{{ $url }}" target="_blank" style="display:block;margin-bottom:0.5rem;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;">
                                 <img src="{{ $url }}" alt="Comprobante" style="width:100%;height:auto;display:block;">
@@ -266,7 +266,7 @@
                 <div style="margin-bottom:0.5rem;">
                     <div class="info-label" style="margin-bottom:0.3rem;">PDFs</div>
                     @foreach($invoicePdfs as $f)
-                        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($f) }}" target="_blank" class="file-chip">
+                        <a href="{{ route('secure.download', ['file' => encrypt($f)]) }}" target="_blank" class="file-chip">
                             📄 {{ basename($f) }}
                         </a>
                     @endforeach
@@ -278,7 +278,7 @@
                 <div style="margin-bottom:0.75rem;">
                     <div class="info-label" style="margin-bottom:0.3rem;">XMLs CFDI</div>
                     @foreach($invoiceXmls as $f)
-                        <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($f) }}" target="_blank" class="file-chip">
+                        <a href="{{ route('secure.download', ['file' => encrypt($f)]) }}" target="_blank" class="file-chip">
                             🧩 {{ basename($f) }}
                         </a>
                     @endforeach

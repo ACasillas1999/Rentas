@@ -57,7 +57,7 @@
         <label for="receipt">Comprobante (Factura / Foto)</label>
         @if (isset($expense) && $expense->receipt)
             <p class="muted" style="font-size:0.82rem;margin-bottom:0.3rem;">
-                📎 <a href="{{ Storage::url($expense->receipt) }}" target="_blank">Ver comprobante actual</a>
+                📎 <a href="{{ route('secure.download', ['file' => encrypt($expense->receipt)]) }}" target="_blank">Ver comprobante actual</a>
             </p>
         @endif
         <input type="file" id="receipt" name="receipt" accept="image/*,.pdf">

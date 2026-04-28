@@ -11,6 +11,7 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LeaseNotificationController;
+use App\Http\Controllers\DownloadController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas de autenticación (públicas)
@@ -57,4 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications', [LeaseNotificationController::class, 'store'])->name('notifications.store');
     Route::post('/notifications/run', [LeaseNotificationController::class, 'runManual'])->name('notifications.run');
     Route::delete('/notifications/{notification}', [LeaseNotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // Descargas Seguras
+    Route::get('/download', [DownloadController::class, 'download'])->name('secure.download');
 });

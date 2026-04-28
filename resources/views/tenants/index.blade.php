@@ -48,45 +48,180 @@
 
     <div class="card">
         <p class="muted">Mostrando {{ $tenants->firstItem() ?? 0 }} - {{ $tenants->lastItem() ?? 0 }} de {{ $tenants->total() }} inquilinos.</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Documento</th>
-                    <th>Telefono</th>
-                    <th>Correo</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($tenants as $tenant)
+        <!-- VISTA DE TABLA (ESCRITORIO Y TABLETA) -->
+        <div class="table-responsive desktop-only">
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ $tenant->full_name }}</td>
-                        <td>{{ $tenant->document_id ?: '-' }}</td>
-                        <td>{{ $tenant->phone ?: '-' }}</td>
-                        <td>{{ $tenant->email ?: '-' }}</td>
-                        <td class="actions">
-                            <a class="btn btn-light" href="{{ route('tenants.show', $tenant) }}">Ver</a>
-                            <a class="btn btn-light" href="{{ route('tenants.edit', $tenant) }}">Editar</a>
-                            <form class="inline" method="POST" action="{{ route('tenants.destroy', $tenant) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-danger" onclick="return confirm('Eliminar inquilino?')">Eliminar</button>
-                            </form>
-                        </td>
+                        <th>Nombre Completo</th>
+                        <th class="tablet-hide">RFC / Documento</th>
+                        <th>Teléfono</th>
+                        <th class="tablet-hide">Correo Electrónico</th>
+                        <th></th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="5">No hay inquilinos registrados con esos filtros.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($tenants as $tenant)
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: var(--primary);">{{ $tenant->full_name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--muted);" class="tablet-show">{{ $tenant->document_id ?: 'Sin RFC' }}</div>
+                            </td>
+                            <td class="tablet-hide">{{ $tenant->document_id ?: '-' }}</td>
+                            <td>{{ $tenant->phone ?: '-' }}</td>
+                            <td class="tablet-hide">{{ $tenant->email ?: '-' }}</td>
+                            <td class="actions">
+                                <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
+                                    <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('tenants.show', $tenant) }}">Ver</a>
+                                    <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('tenants.edit', $tenant) }}">Editar</a>
+                                    <form class="inline" method="POST" action="{{ route('tenants.destroy', $tenant) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="return confirm('¿Eliminar inquilino?')">Eliminar</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5">No hay inquilinos registrados con esos filtros.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- VISTA DE TARJETAS (SOLO CELULAR) -->
+        <div class="mobile-only tenant-cards">
+            @forelse ($tenants as $tenant)
+                <div class="tenant-card">
+                    <div class="tenant-card-body">
+                        <div class="tenant-card-name">{{ $tenant->full_name }}</div>
+                        <div class="tenant-card-doc">{{ $tenant->document_id ?: 'Sin RFC/Documento' }}</div>
+                        
+                        <div class="tenant-card-info">
+                            <div class="info-item">
+                                <span class="info-icon">📞</span>
+                                <span>{{ $tenant->phone ?: 'No registrado' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-icon">✉️</span>
+                                <span style="font-size: 0.8rem; word-break: break-all;">{{ $tenant->email ?: 'Sin correo' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tenant-card-actions">
+                        <a href="{{ route('tenants.show', $tenant) }}" class="card-btn">Ver</a>
+                        <a href="{{ route('tenants.edit', $tenant) }}" class="card-btn">Editar</a>
+                        <form method="POST" action="{{ route('tenants.destroy', $tenant) }}" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="card-btn delete" onclick="return confirm('¿Eliminar?')">Borrar</button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <p class="muted" style="text-align: center; padding: 2rem;">No hay inquilinos para mostrar.</p>
+            @endforelse
+        </div>
 
         <div class="pagination">{{ $tenants->links() }}</div>
     </div>
-
 @endsection
+
+@push('styles')
+    <style>
+        @media (max-width: 1100px) {
+            .tablet-hide { display: none !important; }
+            .form-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: block !important; }
+            .form-grid { grid-template-columns: 1fr; }
+            .page-head { flex-direction: column; align-items: stretch; gap: 0.8rem; padding: 0.5rem 0; }
+            .page-head .btn { width: 100%; }
+            .card { padding: 0.8rem; margin-bottom: 1rem; }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-only { display: none !important; }
+            .desktop-only { display: block !important; }
+            .tablet-show { display: none !important; }
+        }
+
+        /* Tenant Cards Style */
+        .tenant-cards {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .tenant-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .tenant-card-body {
+            padding: 1rem;
+        }
+        .tenant-card-name {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 0.1rem;
+        }
+        .tenant-card-doc {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 0.8rem;
+        }
+        .tenant-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+        .info-icon { font-size: 0.9rem; }
+
+        .tenant-card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            border-top: 1px solid var(--border);
+            background: #f8fafc;
+        }
+        .card-btn {
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--text-main);
+            border-right: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        .card-btn:last-child { border-right: none; }
+        .card-btn:active { background: #f1f5f9; }
+        .card-btn.delete { color: #ef4444; }
+
+        /* Responsive table wrapper */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 1rem;
+        }
+        .table-responsive table { min-width: 800px; }
+    </style>
+@endpush
 
 @push('modals')
     <div class="modal-overlay" id="modal-create-tenant" data-modal-auto-open="true">

@@ -81,7 +81,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
                 <h3 style="margin: 0; color: #153464;">Documento del Contrato</h3>
                 @if($lease->contract_pdf)
-                    <a href="{{ asset('storage/' . $lease->contract_pdf) }}" target="_blank" class="btn btn-primary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
+                    <a href="{{ route('secure.download', ['file' => encrypt($lease->contract_pdf)]) }}" target="_blank" class="btn btn-primary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
                         <span style="display: flex; align-items: center; gap: 0.4rem;">
                             <svg viewBox="0 0 24 24" width="16" height="16" style="stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -96,9 +96,9 @@
             
             @if($lease->contract_pdf)
                 <div style="flex: 1; min-height: 500px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #e9eef6;">
-                    <iframe src="{{ asset('storage/' . $lease->contract_pdf) }}" width="100%" height="100%" style="border: none; min-height: 500px; display: block;">
+                    <iframe src="{{ route('secure.download', ['file' => encrypt($lease->contract_pdf)]) }}" width="100%" height="100%" style="border: none; min-height: 500px; display: block;">
                         Tu navegador no soporta la visualización de PDFs. 
-                        <a href="{{ asset('storage/' . $lease->contract_pdf) }}">Descargar archivo</a>.
+                        <a href="{{ route('secure.download', ['file' => encrypt($lease->contract_pdf)]) }}">Descargar archivo</a>.
                     </iframe>
                 </div>
             @else
@@ -133,7 +133,7 @@
                 <p class="muted" style="margin: 0;">No hay pagos registrados para este contrato.</p>
             </div>
         @else
-            <div style="overflow-x: auto;">
+            <div class="payment-table-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -196,6 +196,41 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            {{-- Vista de Tarjetas de Pago para Móvil --}}
+            <div class="payment-cards-grid">
+                @foreach ($lease->payments as $payment)
+                    <div class="payment-card">
+                        <div class="payment-card-status">
+                            @if($payment->status === 'paid')
+                                <span class="badge badge-ok">Pagado</span>
+                            @elseif($payment->status === 'overdue')
+                                <span class="badge badge-bad">Vencido</span>
+                            @elseif($payment->status === 'pending')
+                                <span class="badge badge-warn">Por facturar</span>
+                            @else
+                                <span class="badge" style="background:#eef2fb; color:#384658;">{{ ucfirst($payment->status) }}</span>
+                            @endif
+                        </div>
+                        
+                        <div class="payment-card-period">
+                            Periodo {{ $payment->period_number }}/{{ $payment->total_periods }}
+                            <span class="payment-card-type" style="margin-left: 0.5rem;">{{ $payment->type === 'rent' ? 'Renta' : 'Mant.' }}</span>
+                        </div>
+                        
+                        <div class="payment-card-dates">
+                            {{ $payment->period_start?->locale('es')->isoFormat('D MMM') }} – {{ $payment->period_end?->locale('es')->isoFormat('D MMM YYYY') }}
+                        </div>
+                        
+                        <div class="payment-card-row">
+                            <div style="font-size: 0.8rem; color: var(--muted);">Vence: {{ $payment->due_date?->format('d/m/y') }}</div>
+                            <div class="payment-card-amount">${{ number_format((float) $payment->amount, 2) }}</div>
+                        </div>
+
+                        <a href="{{ route('payments.show', $payment) }}" class="btn btn-light" style="width: 100%; text-align: center; margin-top: 0.4rem;">Ver Detalle</a>
+                    </div>
+                @endforeach
             </div>
         @endif
     </div>

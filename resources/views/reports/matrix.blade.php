@@ -95,6 +95,9 @@
         margin-bottom: 20px;
         border-bottom: 2px solid #e2e8f0;
         padding-bottom: 0px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 1rem;
     }
     .tab-item {
         padding: 10px 20px;
@@ -107,7 +110,8 @@
         cursor: pointer;
         text-decoration: none;
         transition: all 0.2s;
-        margin-bottom: -2px; /* Pull down to overlap border */
+        margin-bottom: -2px; 
+        white-space: nowrap;
     }
     .tab-item:hover {
         background: #e2e8f0;
@@ -156,10 +160,10 @@
 
 <div class="tabs-nav no-print">
     <a href="{{ route('reports.matrix', ['mode' => 'annual', 'year' => $year, 'property_id' => $propertyId]) }}" class="tab-item {{ $mode === 'annual' ? 'active' : '' }}">
-        Ver Año Completo
+        📅 Matriz Anual
     </a>
     <a href="{{ route('reports.matrix', ['mode' => 'monthly', 'year' => $year, 'month' => $month, 'property_id' => $propertyId]) }}" class="tab-item {{ $mode === 'monthly' ? 'active' : '' }}">
-        Ver por Mes (Desglose)
+        📊 Desglose Mensual
     </a>
 </div>
 
@@ -411,7 +415,7 @@
     <div class="matrix-section-title" style="background: #1e293b; color: white;">
         <span>REPORTE PORMENORIZADO DEL MES - {{ strtoupper($selectedPeriod) }}</span>
     </div>
-    <div class="matrix-wrapper">
+    <div class="matrix-wrapper payment-table-wrap">
         <table class="matrix-table">
             <thead>
                 <tr class="sticky-row-1">
@@ -453,11 +457,11 @@
                         $rSub = $rentP ? (float)$rentP->subtotal : 0;
                         $rTax = $rentP ? (float)$rentP->tax_amount : 0;
                         $rAmt = $rentP ? (float)$rentP->amount : 0;
-
+ 
                         $mSub = $mainP ? (float)$mainP->subtotal : 0;
                         $mTax = $mainP ? (float)$mainP->tax_amount : 0;
                         $mAmt = $mainP ? (float)$mainP->amount : 0;
-
+ 
                         $gTotalRentSubtotal += $rSub; $gTotalRentTax += $rTax; $gTotalRentAmount += $rAmt;
                         $gTotalMaintSubtotal += $mSub; $gTotalMaintTax += $mTax; $gTotalMaintAmount += $mAmt;
                     @endphp
@@ -466,7 +470,7 @@
                         <td class="sticky-col" style="left: 45px;">{{ $unit->code }}</td>
                         <td>{{ $lease->tenant->full_name ?? 'VACANTE' }}</td>
                         <td>{{ $lease ? $lease->start_date?->format('d/m/y') . ' - ' . $lease->end_date?->format('d/m/y') : '-' }}</td>
-
+ 
                         {{-- Renta --}}
                         @php $rStatusClass = $rentP ? 'cell-'.$rentP->status : 'cell-empty'; @endphp
                         <td class="{{ $rStatusClass }}" style="line-height: 1.1; padding: 6px 4px;">
@@ -476,43 +480,16 @@
                                     @if($rentP->invoice_folio)
                                         <div style="font-size: 0.65rem;">Folio: {{ $rentP->invoice_folio }}</div>
                                     @endif
-                                    @if($rentP->paid_at)
-                                        <div style="font-size: 0.65rem;">Pago: {{ $rentP->paid_at->format('d/m/y') }}</div>
-                                    @endif
                                     <div style="font-size: 0.6rem; color: #64748b; font-weight: normal; margin-top: 2px;">{{ $rentP->period_label }}</div>
                                 </a>
                             @else
                                 -
                             @endif
                         </td>
-                        <td class="bg-row-renta">
-                            @if($rentP)
-                                <a href="{{ route('payments.show', $rentP) }}" style="text-decoration: none; color: inherit;">
-                                    ${{ number_format($rSub, 2) }}
-                                </a>
-                            @else
-                                ${{ number_format($rSub, 2) }}
-                            @endif
-                        </td>
-                        <td class="bg-row-renta">
-                            @if($rentP)
-                                <a href="{{ route('payments.show', $rentP) }}" style="text-decoration: none; color: inherit;">
-                                    ${{ number_format($rTax, 2) }}
-                                </a>
-                            @else
-                                ${{ number_format($rTax, 2) }}
-                            @endif
-                        </td>
-                        <td class="th-renta">
-                            @if($rentP)
-                                <a href="{{ route('payments.show', $rentP) }}" style="text-decoration: none; color: inherit; font-weight: 800;">
-                                    ${{ number_format($rAmt, 2) }}
-                                </a>
-                            @else
-                                ${{ number_format($rAmt, 2) }}
-                            @endif
-                        </td>
-
+                        <td class="bg-row-renta">${{ number_format($rSub, 2) }}</td>
+                        <td class="bg-row-renta">${{ number_format($rTax, 2) }}</td>
+                        <td class="th-renta">${{ number_format($rAmt, 2) }}</td>
+ 
                         {{-- Manto --}}
                         @php $mStatusClass = $mainP ? 'cell-'.$mainP->status : 'cell-empty'; @endphp
                         <td class="{{ $mStatusClass }}" style="line-height: 1.1; padding: 6px 4px;">
@@ -522,43 +499,16 @@
                                     @if($mainP->invoice_folio)
                                         <div style="font-size: 0.65rem;">Folio: {{ $mainP->invoice_folio }}</div>
                                     @endif
-                                    @if($mainP->paid_at)
-                                        <div style="font-size: 0.65rem;">Pago: {{ $mainP->paid_at->format('d/m/y') }}</div>
-                                    @endif
                                     <div style="font-size: 0.6rem; color: #64748b; font-weight: normal; margin-top: 2px;">{{ $mainP->period_label }}</div>
                                 </a>
                             @else
                                 -
                             @endif
                         </td>
-                        <td class="bg-row-manto">
-                            @if($mainP)
-                                <a href="{{ route('payments.show', $mainP) }}" style="text-decoration: none; color: inherit;">
-                                    ${{ number_format($mSub, 2) }}
-                                </a>
-                            @else
-                                ${{ number_format($mSub, 2) }}
-                            @endif
-                        </td>
-                        <td class="bg-row-manto">
-                            @if($mainP)
-                                <a href="{{ route('payments.show', $mainP) }}" style="text-decoration: none; color: inherit;">
-                                    ${{ number_format($mTax, 2) }}
-                                </a>
-                            @else
-                                ${{ number_format($mTax, 2) }}
-                            @endif
-                        </td>
-                        <td class="th-manto">
-                            @if($mainP)
-                                <a href="{{ route('payments.show', $mainP) }}" style="text-decoration: none; color: inherit; font-weight: 800;">
-                                    ${{ number_format($mAmt, 2) }}
-                                </a>
-                            @else
-                                ${{ number_format($mAmt, 2) }}
-                            @endif
-                        </td>
-
+                        <td class="bg-row-manto">${{ number_format($mSub, 2) }}</td>
+                        <td class="bg-row-manto">${{ number_format($mTax, 2) }}</td>
+                        <td class="th-manto">${{ number_format($mAmt, 2) }}</td>
+ 
                         <td class="grand-total">${{ number_format($rAmt + $mAmt, 2) }}</td>
                     </tr>
                 @endforeach
@@ -578,6 +528,63 @@
                 </tr>
             </tfoot>
         </table>
+    </div>
+
+    {{-- Vista de tarjetas para matriz mensual en móvil --}}
+    <div class="payment-cards-grid" style="margin-top:1rem;">
+        @foreach($units as $unit)
+            @php
+                $lease = $unit->leases->first();
+                $rentP = $matrix[$selectedPeriod][$unit->code]['rent'] ?? null;
+                $mainP = $matrix[$selectedPeriod][$unit->code]['maintenance'] ?? null;
+                $rAmt = $rentP ? (float)$rentP->amount : 0;
+                $mAmt = $mainP ? (float)$mainP->amount : 0;
+            @endphp
+            <div class="payment-card" style="border-radius:16px; background:#fff; border:1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                    <div>
+                        <div style="font-weight:800; color:var(--primary); font-size:1.1rem;">{{ $unit->code }}</div>
+                        <div style="font-size:0.85rem; font-weight:700; color:var(--text);">{{ $lease->tenant->full_name ?? 'VACANTE' }}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase;">Total Mes</div>
+                        <div style="font-weight:800; font-size:1.2rem; color:var(--text);">${{ number_format($rAmt + $mAmt, 2) }}</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; background:#f8fafc; border-radius:12px; padding:0.75rem;">
+                    {{-- Renta Card Part --}}
+                    <div style="border-right:1px solid #e2e8f0; padding-right:0.5rem;">
+                        <div style="font-size:0.65rem; font-weight:800; color:#166534; text-transform:uppercase; margin-bottom:0.2rem;">Renta</div>
+                        @if($rentP)
+                            <div style="font-weight:700; font-size:0.9rem;">${{ number_format($rAmt, 2) }}</div>
+                            <div class="badge" style="font-size:0.6rem; padding:0.1rem 0.4rem; margin-top:0.2rem; background:{{ $rentP->status === 'paid' ? '#dcfce7' : ($rentP->status === 'overdue' ? '#fee2e2' : '#fef3c7') }}; color:inherit;">
+                                {{ strtoupper($statusLabels[$rentP->status] ?? $rentP->status) }}
+                            </div>
+                        @else
+                            <div style="color:var(--muted); font-size:0.8rem;">—</div>
+                        @endif
+                    </div>
+                    {{-- Manto Card Part --}}
+                    <div style="padding-left:0.2rem;">
+                        <div style="font-size:0.65rem; font-weight:800; color:#0369a1; text-transform:uppercase; margin-bottom:0.2rem;">Manto.</div>
+                        @if($mainP)
+                            <div style="font-weight:700; font-size:0.9rem;">${{ number_format($mAmt, 2) }}</div>
+                            <div class="badge" style="font-size:0.6rem; padding:0.1rem 0.4rem; margin-top:0.2rem; background:{{ $mainP->status === 'paid' ? '#dcfce7' : ($mainP->status === 'overdue' ? '#fee2e2' : '#fef3c7') }}; color:inherit;">
+                                {{ strtoupper($statusLabels[$mainP->status] ?? $mainP->status) }}
+                            </div>
+                        @else
+                            <div style="color:var(--muted); font-size:0.8rem;">—</div>
+                        @endif
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+                    @if($rentP) <a href="{{ route('payments.show', $rentP) }}" class="btn btn-light" style="flex:1; font-size:0.75rem; padding:0.4rem;">Renta</a> @endif
+                    @if($mainP) <a href="{{ route('payments.show', $mainP) }}" class="btn btn-light" style="flex:1; font-size:0.75rem; padding:0.4rem;">Manto.</a> @endif
+                </div>
+            </div>
+        @endforeach
     </div>
 @endif
 @if(!$isExport)

@@ -56,7 +56,7 @@ class ExpenseController extends Controller
         ]);
 
         if ($request->hasFile('receipt')) {
-            $data['receipt'] = $request->file('receipt')->store('expenses', 'public');
+            $data['receipt'] = $request->file('receipt')->store('expenses');
         }
 
         Expense::create($data);
@@ -92,8 +92,11 @@ class ExpenseController extends Controller
         ]);
 
         if ($request->hasFile('receipt')) {
-            if ($expense->receipt) Storage::disk('public')->delete($expense->receipt);
-            $data['receipt'] = $request->file('receipt')->store('expenses', 'public');
+            if ($expense->receipt) {
+                Storage::delete($expense->receipt);
+                Storage::disk('public')->delete($expense->receipt);
+            }
+            $data['receipt'] = $request->file('receipt')->store('expenses');
         }
 
         $expense->update($data);
@@ -103,7 +106,10 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
-        if ($expense->receipt) Storage::disk('public')->delete($expense->receipt);
+        if ($expense->receipt) {
+            Storage::delete($expense->receipt);
+            Storage::disk('public')->delete($expense->receipt);
+        }
         $expense->delete();
         return redirect()->route('expenses.index')->with('success', 'Gasto eliminado.');
     }

@@ -136,7 +136,7 @@ class PaymentController extends Controller
     $data['status']      = ($paidAmount < $expected) ? 'partial' : 'paid';
 
     if ($request->hasFile('receipt')) {
-        $data['receipt'] = $request->file('receipt')->store('receipts', 'public');
+        $data['receipt'] = $request->file('receipt')->store('receipts');
     }
 
     $payment->update($data);
@@ -174,7 +174,7 @@ class PaymentController extends Controller
         if ($request->hasFile('invoice_pdf')) {
             $current = is_array($payment->invoice_pdf) ? $payment->invoice_pdf : ($payment->invoice_pdf ? [$payment->invoice_pdf] : []);
             foreach ($request->file('invoice_pdf') as $file) {
-                $current[] = $file->store('invoices', 'public');
+                $current[] = $file->store('invoices');
             }
             $updateData['invoice_pdf'] = $current;
         }
@@ -183,7 +183,7 @@ class PaymentController extends Controller
         if ($request->hasFile('invoice_xml')) {
             $current = is_array($payment->invoice_xml) ? $payment->invoice_xml : ($payment->invoice_xml ? [$payment->invoice_xml] : []);
             foreach ($request->file('invoice_xml') as $file) {
-                $current[] = $file->store('invoices', 'public');
+                $current[] = $file->store('invoices');
             }
             $updateData['invoice_xml'] = $current;
         }
@@ -214,9 +214,9 @@ class PaymentController extends Controller
         $newPaths = [];
         if ($request->hasFile('receipt')) {
             foreach ($request->file('receipt') as $file) {
-                $path      = $file->store('receipts', 'public');
+                $path      = $file->store('receipts');
                 $current[] = $path;
-                $newPaths[] = asset('storage/' . $path);
+                $newPaths[] = route('secure.download', ['file' => encrypt($path)]);
             }
         }
 

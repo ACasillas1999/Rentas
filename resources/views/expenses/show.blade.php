@@ -37,9 +37,9 @@
             @if ($expense->receipt)
                 @php $ext = pathinfo($expense->receipt, PATHINFO_EXTENSION); @endphp
                 @if (in_array(strtolower($ext), ['jpg','jpeg','png','webp']))
-                    <img src="{{ Storage::url($expense->receipt) }}" style="width:100%;border-radius:8px;max-height:350px;object-fit:contain;">
+                    <img src="{{ route('secure.download', ['file' => encrypt($expense->receipt)]) }}" style="width:100%;border-radius:8px;max-height:350px;object-fit:contain;">
                 @else
-                    <a href="{{ Storage::url($expense->receipt) }}" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;">
+                    <a href="{{ route('secure.download', ['file' => encrypt($expense->receipt)]) }}" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;">
                         <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right:0.4rem;" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16h16a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
                         Ver Comprobante (PDF)
                     </a>

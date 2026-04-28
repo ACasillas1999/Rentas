@@ -697,7 +697,7 @@
             opacity: 1;
         }
 
-        @media (max-width: 980px) {
+        @media (max-width: 1100px) {
             .sidebar {
                 width: 280px;
                 min-width: 280px;
@@ -727,7 +727,7 @@
             }
 
             .content-shell {
-                padding: 0.9rem;
+                padding: 1.2rem 1rem;
             }
 
             .topbar {
@@ -743,20 +743,113 @@
                 gap: 0.5rem;
             }
 
-            .card > table,
-            .dash-card > table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-                -webkit-overflow-scrolling: touch;
+            .card-table-wrap {
+                display: none;
             }
+        }
 
-            .card > table th,
-            .card > table td,
-            .dash-card > table th,
-            .dash-card > table td {
-                font-size: 0.86rem;
+        /* ── Lease Cards (Mobile Optimization) ──────────────── */
+        .lease-cards-grid {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 720px) {
+            .lease-cards-grid {
+                display: grid;
             }
+        }
+
+        .lease-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            animation: card-appear 0.4s ease-out backwards;
+        }
+
+        @keyframes card-appear {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .lease-card:active {
+            transform: scale(0.98);
+        }
+
+        .lease-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .lease-card-folio {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .lease-card-unit {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-top: 0.2rem;
+        }
+
+        .lease-card-tenant {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text);
+        }
+
+        .lease-card-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.8rem 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .lease-card-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+            margin-bottom: 0.15rem;
+        }
+
+        .lease-card-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2a3f5d;
+        }
+
+        .lease-card-amount {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--success);
+        }
+
+        .lease-card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .lease-card-actions .btn {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            padding: 0.6rem;
         }
         @media print {
             .sidebar, 
@@ -796,8 +889,71 @@
             }
         }
 
-        .no-print {
-            /* Clase utilitaria */
+        /* ── Payment Cards (Mobile Optimization) ──────────────── */
+        .payment-cards-grid {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 720px) {
+            .payment-cards-grid {
+                display: grid;
+            }
+            .payment-table-wrap {
+                display: none;
+            }
+        }
+
+        .payment-card {
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            position: relative;
+        }
+
+        .payment-card-status {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .payment-card-period {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .payment-card-dates {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .payment-card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-card-type {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            background: #fff;
+            border: 1px solid var(--border);
+        }
+
+        .payment-card-amount {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #173763;
+        }
         }
     </style>
     @stack('styles')

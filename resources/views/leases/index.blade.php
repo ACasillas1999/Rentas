@@ -78,7 +78,7 @@
         </form>
     </div>
 
-    <div class="card">
+    <div class="card card-table-wrap">
         <p class="muted">Mostrando {{ $leases->firstItem() ?? 0 }} - {{ $leases->lastItem() ?? 0 }} de {{ $leases->total() }} contratos.</p>
         <table>
             <thead>
@@ -95,7 +95,7 @@
             <tbody>
                 @forelse ($leases as $lease)
                     <tr>
-                        <td>{{ $lease->contract_number ?: 'Sin folio' }}</td>
+                        <td style="font-weight:700;">{{ $lease->contract_number ?: 'Sin folio' }}</td>
                         <td>{{ $lease->unit->property->name ?? '-' }} / {{ $lease->unit->code ?? '-' }}</td>
                         <td>{{ $lease->tenant->full_name ?? '-' }}</td>
                         <td>{{ $lease->start_date?->format('Y-m-d') }} a {{ $lease->end_date?->format('Y-m-d') ?: 'Abierto' }}</td>
@@ -129,7 +129,55 @@
                 @endforelse
             </tbody>
         </table>
+        <div class="pagination">{{ $leases->links() }}</div>
+    </div>
 
+    {{-- Vista de Tarjetas para Móvil --}}
+    <div class="lease-cards-grid">
+        @forelse ($leases as $lease)
+            <div class="lease-card">
+                <div class="lease-card-head">
+                    <div>
+                        <div class="lease-card-folio">{{ $lease->contract_number ?: 'S/F' }}</div>
+                        <div class="lease-card-unit">{{ $lease->unit->property->name ?? '-' }} / {{ $lease->unit->code ?? '-' }}</div>
+                    </div>
+                    @if($lease->status === 'active')
+                        <span class="badge badge-ok">Activo</span>
+                    @elseif($lease->status === 'finished')
+                        <span class="badge badge-bad">Finalizado</span>
+                    @else
+                        <span class="badge badge-warn">{{ ucfirst($lease->status) }}</span>
+                    @endif
+                </div>
+
+                <div class="lease-card-tenant">
+                    {{ $lease->tenant->full_name ?? 'Sin inquilino' }}
+                </div>
+
+                <div class="lease-card-info">
+                    <div>
+                        <div class="lease-card-label">Periodo</div>
+                        <div class="lease-card-value">{{ $lease->start_date?->format('d/m/y') }} - {{ $lease->end_date?->format('d/m/y') ?: 'Abierto' }}</div>
+                    </div>
+                    <div>
+                        <div class="lease-card-label">Monto Mensual</div>
+                        <div class="lease-card-amount">${{ number_format((float) $lease->monthly_amount, 2) }}</div>
+                    </div>
+                </div>
+
+                <div class="lease-card-actions">
+                    <a class="btn btn-primary" href="{{ route('leases.show', $lease) }}">Ver Detalle</a>
+                    <a class="btn btn-light" href="{{ route('leases.edit', $lease) }}">Editar</a>
+                    @if($lease->status === 'active')
+                        <a class="btn btn-light" href="{{ route('leases.renew', $lease) }}">🔄</a>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="card" style="text-align: center; color: var(--muted); padding: 2rem;">
+                No hay contratos que mostrar.
+            </div>
+        @endforelse
         <div class="pagination">{{ $leases->links() }}</div>
     </div>
 

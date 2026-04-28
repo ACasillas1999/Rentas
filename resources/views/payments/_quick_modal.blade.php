@@ -101,7 +101,7 @@
                                 @if($payment->invoice_pdf)
                                     <div style="margin-top:0.3rem;">
                                         @foreach((array)$payment->invoice_pdf as $file)
-                                            <small class="muted" style="display:block;"><a href="{{ asset('storage/'.$file) }}" target="_blank">📄 {{ basename($file) }}</a></small>
+                                            <small class="muted" style="display:block;"><a href="{{ route('secure.download', ['file' => encrypt($file)]) }}" target="_blank">📄 {{ basename($file) }}</a></small>
                                         @endforeach
                                     </div>
                                 @endif
@@ -112,7 +112,7 @@
                                 @if($payment->invoice_xml)
                                     <div style="margin-top:0.3rem;">
                                         @foreach((array)$payment->invoice_xml as $file)
-                                            <small class="muted" style="display:block;"><a href="{{ asset('storage/'.$file) }}" target="_blank">🧩 {{ basename($file) }}</a></small>
+                                            <small class="muted" style="display:block;"><a href="{{ route('secure.download', ['file' => encrypt($file)]) }}" target="_blank">🧩 {{ basename($file) }}</a></small>
                                         @endforeach
                                     </div>
                                 @endif
@@ -161,7 +161,7 @@
                                 @if($payment->receipt)
                                     <div style="margin-top:0.3rem;">
                                         @foreach((array)$payment->receipt as $file)
-                                            <small class="muted" style="display:block;"><a href="{{ asset('storage/'.$file) }}" target="_blank">🧾 {{ basename($file) }}</a></small>
+                                            <small class="muted" style="display:block;"><a href="{{ route('secure.download', ['file' => encrypt($file)]) }}" target="_blank">🧾 {{ basename($file) }}</a></small>
                                         @endforeach
                                     </div>
                                 @endif

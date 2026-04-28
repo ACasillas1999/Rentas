@@ -111,7 +111,7 @@
             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <input type="file" id="contract_pdf" name="contract_pdf" accept=".pdf" style="flex: 1; min-width: 250px;">
                 @if(isset($lease) && $lease->contract_pdf)
-                    <a href="{{ asset('storage/' . $lease->contract_pdf) }}" target="_blank" class="btn btn-light">
+                    <a href="{{ route('secure.download', ['file' => encrypt($lease->contract_pdf)]) }}" target="_blank" class="btn btn-light">
                         📄 Ver PDF Actual
                     </a>
                 @endif
