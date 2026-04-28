@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Lease;
 use App\Models\Payment;
+use App\Models\Property;
 use App\Models\Tenant;
 use App\Models\Unit;
+use App\Traits\FiltersByUserAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,8 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class LeaseController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function index(Request $request)
     {
+        $this->authorizePermission('leases.view');
         $filters = [
             'q'          => trim((string) $request->query('q', '')),
             'status'     => (string) $request->query('status', ''),
@@ -46,6 +51,9 @@ class LeaseController extends Controller
 
         $query = Lease::query()->with(['unit.property', 'tenant']);
 
+        // ── Filtro de acceso por propiedad ──
+        $this->applyLeasePropertyFilter($query);
+
         $query
             ->when($filters['q'] !== '', function ($builder) use ($filters) {
                 $like = '%' . $filters['q'] . '%';
@@ -66,7 +74,9 @@ class LeaseController extends Controller
             ->paginate($filters['per_page'])
             ->withQueryString();
 
-        $units   = Unit::with('property')->orderBy('code')->get();
+        $unitsQuery = Unit::with('property')->orderBy('code');
+        $this->applyPropertyFilter($unitsQuery);
+        $units = $unitsQuery->get();
         $tenants = Tenant::orderBy('full_name')->get();
 
         return view('leases.index', compact('leases', 'units', 'tenants', 'filters', 'perPageOptions'));
@@ -74,7 +84,11 @@ class LeaseController extends Controller
 
     public function create()
     {
-        $units   = Unit::with(['property', 'leases' => fn($q) => $q->where('status', 'active')])->orderBy('code')->get();
+        $this->authorizePermission('leases.create');
+
+        $unitsQuery = Unit::with(['property', 'leases' => fn($q) => $q->where('status', 'active')])->orderBy('code');
+        $this->applyPropertyFilter($unitsQuery);
+        $units = $unitsQuery->get();
         $tenants = Tenant::orderBy('full_name')->get();
 
         return view('leases.create', compact('units', 'tenants'));
@@ -82,6 +96,8 @@ class LeaseController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizePermission('leases.create');
+
         $data = $this->validateLease($request);
 
         if ($data['status'] === 'active') {
@@ -115,6 +131,9 @@ class LeaseController extends Controller
 
     public function show(Lease $lease)
     {
+        $this->authorizePermission('leases.view');
+        $this->authorizeProperty($lease->unit->property_id);
+
         $lease->load(['unit.property', 'tenant', 'payments' => function ($q) {
             $q->orderBy('period_number')->orderBy('type');
         }]);
@@ -124,7 +143,12 @@ class LeaseController extends Controller
 
     public function edit(Lease $lease)
     {
-        $units   = Unit::with(['property', 'leases' => fn($q) => $q->where('status', 'active')])->orderBy('code')->get();
+        $this->authorizePermission('leases.edit');
+        $this->authorizeProperty($lease->unit->property_id);
+
+        $unitsQuery = Unit::with(['property', 'leases' => fn($q) => $q->where('status', 'active')])->orderBy('code');
+        $this->applyPropertyFilter($unitsQuery);
+        $units = $unitsQuery->get();
         $tenants = Tenant::orderBy('full_name')->get();
 
         return view('leases.edit', compact('lease', 'units', 'tenants'));
@@ -132,6 +156,9 @@ class LeaseController extends Controller
 
     public function update(Request $request, Lease $lease)
     {
+        $this->authorizePermission('leases.edit');
+        $this->authorizeProperty($lease->unit->property_id);
+
         $previousUnitId = $lease->unit_id;
         $data = $this->validateLease($request, $lease);
 
@@ -200,7 +227,12 @@ class LeaseController extends Controller
 
     public function renew(Lease $lease)
     {
-        $units   = Unit::with('property')->orderBy('code')->get();
+        $this->authorizePermission('leases.create');
+        $this->authorizeProperty($lease->unit->property_id);
+
+        $unitsQuery = Unit::with('property')->orderBy('code');
+        $this->applyPropertyFilter($unitsQuery);
+        $units = $unitsQuery->get();
         $tenants = Tenant::orderBy('full_name')->get();
 
         // Sugerir fecha de inicio del primer periodo (día siguiente al fin del anterior)
@@ -214,6 +246,8 @@ class LeaseController extends Controller
 
     public function storeRenewal(Request $request, Lease $lease)
     {
+        $this->authorizePermission('leases.create');
+
         $data = $this->validateLease($request);
 
         return \Illuminate\Support\Facades\DB::transaction(function () use ($data, $lease, $request) {
@@ -245,6 +279,9 @@ class LeaseController extends Controller
 
     public function destroy(Lease $lease)
     {
+        $this->authorizePermission('leases.delete');
+        $this->authorizeProperty($lease->unit->property_id);
+
         $unit = $lease->unit;
         // Eliminar pagos asociados primero para evitar registros huérfanos
         $lease->payments()->delete();

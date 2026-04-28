@@ -5,14 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\Property;
 use App\Models\Unit;
+use App\Traits\FiltersByUserAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ExpenseController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function index(Request $request)
     {
+        $this->authorizePermission('expenses.view');
+
         $query = Expense::with(['property', 'unit'])->latest('expense_date');
+
+        // ── Filtro de acceso por propiedad ──
+        $this->applyPropertyFilter($query);
 
         if ($request->filled('property_id')) {
             $query->where('property_id', $request->property_id);
@@ -26,7 +34,12 @@ class ExpenseController extends Controller
         }
 
         $expenses   = $query->paginate(20)->withQueryString();
-        $properties = Property::orderBy('name')->get();
+
+        // Solo propiedades accesibles en el filtro
+        $propertiesQuery = Property::orderBy('name');
+        $this->applyPropertyIdFilter($propertiesQuery);
+        $properties = $propertiesQuery->get();
+
         $categories = Expense::categories();
         $totalAmount = $query->sum('amount');
 
@@ -35,7 +48,12 @@ class ExpenseController extends Controller
 
     public function create()
     {
-        $properties = Property::orderBy('name')->get();
+        $this->authorizePermission('expenses.create');
+
+        $propertiesQuery = Property::orderBy('name');
+        $this->applyPropertyIdFilter($propertiesQuery);
+        $properties = $propertiesQuery->get();
+
         $units      = collect();
         $categories = Expense::categories();
         return view('expenses.create', compact('properties', 'units', 'categories'));
@@ -43,6 +61,8 @@ class ExpenseController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizePermission('expenses.create');
+
         $data = $request->validate([
             'property_id'  => 'required|exists:properties,id',
             'unit_id'      => 'nullable|exists:units,id',
@@ -55,6 +75,9 @@ class ExpenseController extends Controller
             'receipt'      => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
+        // Verificar acceso a la propiedad
+        $this->authorizeProperty((int) $data['property_id']);
+
         if ($request->hasFile('receipt')) {
             $data['receipt'] = $request->file('receipt')->store('expenses');
         }
@@ -66,12 +89,21 @@ class ExpenseController extends Controller
 
     public function show(Expense $expense)
     {
+        $this->authorizePermission('expenses.view');
+        $this->authorizeProperty($expense->property_id);
+
         return view('expenses.show', compact('expense'));
     }
 
     public function edit(Expense $expense)
     {
-        $properties = Property::orderBy('name')->get();
+        $this->authorizePermission('expenses.edit');
+        $this->authorizeProperty($expense->property_id);
+
+        $propertiesQuery = Property::orderBy('name');
+        $this->applyPropertyIdFilter($propertiesQuery);
+        $properties = $propertiesQuery->get();
+
         $units      = Unit::where('property_id', $expense->property_id)->orderBy('code')->get();
         $categories = Expense::categories();
         return view('expenses.edit', compact('expense', 'properties', 'units', 'categories'));
@@ -79,6 +111,9 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense)
     {
+        $this->authorizePermission('expenses.edit');
+        $this->authorizeProperty($expense->property_id);
+
         $data = $request->validate([
             'property_id'  => 'required|exists:properties,id',
             'unit_id'      => 'nullable|exists:units,id',
@@ -106,6 +141,9 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
+        $this->authorizePermission('expenses.delete');
+        $this->authorizeProperty($expense->property_id);
+
         if ($expense->receipt) {
             Storage::delete($expense->receipt);
             Storage::disk('public')->delete($expense->receipt);

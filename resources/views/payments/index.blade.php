@@ -5,7 +5,9 @@
 @section('content')
     <div class="page-head">
         
+        @if(auth()->user()->hasPermission('payments.create'))
         <button type="button" class="btn btn-primary" data-modal-target="#modal-create-payment">Registrar pago</button>
+        @endif
     </div>
 
     <div class="card">
@@ -153,7 +155,9 @@
                         </td>
                         <td class="actions">
                             <a class="btn btn-light" href="{{ route('payments.show', $payment) }}">Ver</a>
+                            @if(auth()->user()->hasPermission('payments.edit'))
                             <a class="btn btn-light" href="{{ route('payments.edit', $payment) }}">Editar</a>
+                            @endif
                         </td>
                     </tr>
                 @empty
@@ -202,7 +206,9 @@
 
                 <div class="payment-card-actions" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                     <a href="{{ route('payments.show', $payment) }}" class="btn btn-primary" style="flex: 1; text-align: center;">Ver</a>
+                    @if(auth()->user()->hasPermission('payments.edit'))
                     <a href="{{ route('payments.edit', $payment) }}" class="btn btn-light" style="flex: 1; text-align: center;">Editar</a>
+                    @endif
                 </div>
             </div>
         @empty
@@ -215,6 +221,7 @@
 @endsection
 
 @push('modals')
+    @if(auth()->user()->hasPermission('payments.create'))
     <div class="modal-overlay" id="modal-create-payment" data-modal-auto-open="true">
         <div class="modal-dialog">
             <div class="modal-head">
@@ -234,6 +241,7 @@
             </div>
         </div>
     </div>
+    @endif
 @endpush
 
 @push('scripts')

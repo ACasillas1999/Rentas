@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Editar Usuario')
 
@@ -12,7 +12,7 @@
         </div>
     </div>
 
-    <div class="card" style="max-width:800px;">
+    <div class="card" style="max-width:1000px;">
         <form action="{{ route('users.update', $user) }}" method="POST">
             @csrf
             @method('PUT')

@@ -6,15 +6,19 @@
     <div class="page-head">
         <h1>Contrato {{ $lease->contract_number ?: 'Sin folio' }}</h1>
         <div class="actions" style="display: flex; gap: 0.8rem;">
-            <a class="btn btn-primary" href="{{ route('leases.payments.bulkEdit', $lease) }}" style="background: #10b981; border-color: #10b981; color: white;">
-                ✏️ Edición Masiva (Excel)
-            </a>
-            @if($lease->status === 'active')
-                <a class="btn btn-primary" href="{{ route('leases.renew', $lease) }}" style="background: var(--success); border-color: var(--success);">
-                    Renovar Contrato
+            @if(auth()->user()->hasPermission('payments.edit'))
+                <a class="btn btn-primary" href="{{ route('leases.payments.bulkEdit', $lease) }}" style="background: #10b981; border-color: #10b981; color: white;">
+                    ✏️ Edición Masiva (Excel)
                 </a>
             @endif
-            <a class="btn btn-primary" href="{{ route('leases.edit', $lease) }}">Editar Contrato</a>
+            @if(auth()->user()->hasPermission('leases.edit'))
+                @if($lease->status === 'active')
+                    <a class="btn btn-primary" href="{{ route('leases.renew', $lease) }}" style="background: var(--success); border-color: var(--success);">
+                        Renovar Contrato
+                    </a>
+                @endif
+                <a class="btn btn-primary" href="{{ route('leases.edit', $lease) }}">Editar Contrato</a>
+            @endif
             <a class="btn btn-light" href="{{ route('leases.index') }}">Volver</a>
         </div>
     </div>
@@ -112,14 +116,16 @@
                     </svg>
                     <p style="margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 600; color: #384658;">Sin contrato adjunto</p>
                     <p style="margin: 0 0 1.5rem 0; font-size: 0.9rem; text-align: center; max-width: 280px;">Aún no se ha cargado un documento PDF para este contrato.</p>
-                    <a href="{{ route('leases.edit', $lease) }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" style="stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        Cargar Documento
-                    </a>
+                    @if(auth()->user()->hasPermission('leases.edit'))
+                        <a href="{{ route('leases.edit', $lease) }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" style="stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Cargar Documento
+                        </a>
+                    @endif
                 </div>
             @endif
         </div>

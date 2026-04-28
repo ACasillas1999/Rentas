@@ -8,14 +8,16 @@
             <h1>Gestión de Notificaciones</h1>
             <p class="muted">Configura alertas por correo para contratos próximos a vencer.</p>
         </div>
-        <div>
-            <form method="POST" action="{{ route('notifications.run') }}">
-                @csrf
-                <button type="submit" class="btn btn-primary" style="background:#0f172a; border-color:#0f172a;">
-                    🚀 Ejecutar Proceso Ahora
-                </button>
-            </form>
-        </div>
+        @if(auth()->user()->hasPermission('notifications.manage'))
+            <div>
+                <form method="POST" action="{{ route('notifications.run') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-primary" style="background:#0f172a; border-color:#0f172a;">
+                        🚀 Ejecutar Proceso Ahora
+                    </button>
+                </form>
+            </div>
+        @endif
     </div>
 
     @if (session('success'))
@@ -64,11 +66,13 @@
                                     @foreach($lease->notifications as $notif)
                                         <div style="display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
                                             <span>{{ $notif->email }}</span>
-                                            <form method="POST" action="{{ route('notifications.destroy', $notif) }}" style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" style="border:none; background:none; color:#dc2626; cursor:pointer;" onclick="return confirm('¿Eliminar esta alerta?')">&times;</button>
-                                            </form>
+                                            @if(auth()->user()->hasPermission('notifications.manage'))
+                                                <form method="POST" action="{{ route('notifications.destroy', $notif) }}" style="display:inline;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" style="border:none; background:none; color:#dc2626; cursor:pointer;" onclick="return confirm('¿Eliminar esta alerta?')">&times;</button>
+                                                </form>
+                                            @endif
                                         </div>
                                     @endforeach
                                 </div>
@@ -77,10 +81,12 @@
                             @endif
                         </td>
                         <td style="text-align: right;">
-                            <button type="button" class="btn btn-primary btn-sm" 
-                                    onclick="openNotificationModal('{{ $lease->id }}', '{{ $lease->tenant->full_name }}', '{{ $lease->unit->code }}')">
-                                + Agregar Alerta
-                            </button>
+                            @if(auth()->user()->hasPermission('notifications.manage'))
+                                <button type="button" class="btn btn-primary btn-sm" 
+                                        onclick="openNotificationModal('{{ $lease->id }}', '{{ $lease->tenant->full_name }}', '{{ $lease->unit->code }}')">
+                                    + Agregar Alerta
+                                </button>
+                            @endif
                         </td>
                     </tr>
                 @empty

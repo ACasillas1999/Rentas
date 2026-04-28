@@ -7,14 +7,19 @@ use App\Models\Payment;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\Lease;
+use App\Traits\FiltersByUserAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function income(Request $request)
     {
+        $this->authorizePermission('reports.view');
+
         $now   = Carbon::now();
         $month = (int) $request->get('month', $now->month);
         $year  = (int) $request->get('year',  $now->year);
@@ -23,9 +28,16 @@ class ReportController extends Controller
 
         $monthStr = str_pad($month, 2, '0', STR_PAD_LEFT);
 
+        $propertyIds = auth()->user()->allowedPropertyIds();
+
         // --- LÓGICA DE FILTRADO SEGÚN EL MODO ---
         $paymentsQuery = Payment::with(['lease.unit.property', 'lease.unit.beneficiary', 'lease.tenant'])
             ->whereNotNull('due_date');
+
+        // ── Filtro de acceso por propiedad ──
+        if ($propertyIds !== null) {
+            $paymentsQuery->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
 
         if ($mode === 'cash') {
             // Modo Flujo de Caja: Dinero que entró físicamente en este mes
@@ -50,11 +62,14 @@ class ReportController extends Controller
 
 
         // Depósitos de contratos que inician en este mes (con detalle)
-        $depositLeases = \App\Models\Lease::with(['unit.property', 'tenant'])
+        $depositQuery = \App\Models\Lease::with(['unit.property', 'tenant'])
             ->whereYear('start_date', $year)
             ->whereMonth('start_date', $month)
-            ->where('deposit_amount', '>', 0)
-            ->get();
+            ->where('deposit_amount', '>', 0);
+        if ($propertyIds !== null) {
+            $depositQuery->whereHas('unit', fn($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $depositLeases = $depositQuery->get();
 
         $totalDeposits = $depositLeases->sum('deposit_amount');
 
@@ -66,16 +81,22 @@ class ReportController extends Controller
             ->sum(fn($p) => (float)($p->amount + ($p->late_fee ?? 0)) - (float)($p->paid_amount ?? 0));
 
         // Total FACTURADO en el mes (por fecha de facturación, independiente del filtro modo)
-        $totalInvoicedMonth = (float) Payment::whereYear('invoiced_at', $year)
+        $invoicedQuery = Payment::whereYear('invoiced_at', $year)
             ->whereMonth('invoiced_at', $month)
-            ->whereIn('status', ['invoiced', 'paid'])
-            ->sum('amount');
+            ->whereIn('status', ['invoiced', 'paid']);
+        if ($propertyIds !== null) {
+            $invoicedQuery->whereHas('lease.unit', fn($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $totalInvoicedMonth = (float) $invoicedQuery->sum('amount');
 
         // Total COBRADO en el mes (dinero que entró físicamente, por fecha de pago)
-        $totalCashedMonth = (float) Payment::whereYear('paid_at', $year)
+        $cashedQuery = Payment::whereYear('paid_at', $year)
             ->whereMonth('paid_at', $month)
-            ->where('status', 'paid')
-            ->sum('paid_amount');
+            ->where('status', 'paid');
+        if ($propertyIds !== null) {
+            $cashedQuery->whereHas('lease.unit', fn($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $totalCashedMonth = (float) $cashedQuery->sum('paid_amount');
 
         // Desglose por propiedad
         $byProperty = $payments
@@ -99,11 +120,14 @@ class ReportController extends Controller
             ])
             ->sortByDesc('paid');
 
-        // Gastos del período
-        $expenses = Expense::with('property')
+        // Gastos del período (filtrados por propiedad si aplica)
+        $expensesQuery = Expense::with('property')
             ->whereYear('expense_date', $year)
-            ->whereMonth('expense_date', $month)
-            ->get();
+            ->whereMonth('expense_date', $month);
+        if ($propertyIds !== null) {
+            $expensesQuery->whereIn('property_id', $propertyIds);
+        }
+        $expenses = $expensesQuery->get();
 
         $totalExpenses = $expenses->sum('amount');
         
@@ -119,16 +143,25 @@ class ReportController extends Controller
         // --- LÓGICA DE DASHBOARD SINCRONIZADA ---
         $filterDate = Carbon::create($year, $month, 1);
         
-        // 1. Ocupación (Basada en contratos activos en ese mes)
-        $totalUnits = Unit::count();
-        $occupiedUnits = Lease::where(function($q) use ($filterDate) {
+        // 1. Ocupación (Basada en contratos activos en ese mes, filtrada por propiedad)
+        $totalUnitsQuery = Unit::query();
+        if ($propertyIds !== null) {
+            $totalUnitsQuery->whereIn('property_id', $propertyIds);
+        }
+        $totalUnits = $totalUnitsQuery->count();
+
+        $occupiedUnitsQuery = Lease::where(function($q) use ($filterDate) {
             $q->where('start_date', '<=', $filterDate->copy()->endOfMonth())
               ->where(function($sq) use ($filterDate) {
                   $sq->whereNull('end_date')
                     ->orWhere('end_date', '>=', $filterDate->copy()->startOfMonth());
               })
               ->where('status', 'active');
-        })->distinct('unit_id')->count('unit_id');
+        });
+        if ($propertyIds !== null) {
+            $occupiedUnitsQuery->whereHas('unit', fn($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $occupiedUnits = $occupiedUnitsQuery->distinct('unit_id')->count('unit_id');
         
         $occupancyRate = $totalUnits > 0 ? round(($occupiedUnits / $totalUnits) * 100) : 0;
 
@@ -158,9 +191,13 @@ class ReportController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $monthDate = $filterDate->copy()->subMonthsNoOverflow($i);
             
-            // Usamos clones de la query base o queries frescas para evitar acumulacion de 'where'
-            $rentQuery = Payment::where('type', 'rent');
+            // Queries base para el gráfico, con filtro de propiedad si aplica
+            $rentQuery  = Payment::where('type', 'rent');
             $maintQuery = Payment::where('type', 'maintenance');
+            if ($propertyIds !== null) {
+                $rentQuery->whereHas('lease.unit',  fn($q) => $q->whereIn('property_id', $propertyIds));
+                $maintQuery->whereHas('lease.unit', fn($q) => $q->whereIn('property_id', $propertyIds));
+            }
 
             if ($mode === 'cash') {
                 $rentQuery->whereYear('paid_at', $monthDate->year)->whereMonth('paid_at', $monthDate->month)->where('status', 'paid');
@@ -176,9 +213,12 @@ class ReportController extends Controller
                 $maintenanceIncome = $maintQuery->get()->sum(fn($p) => (float)$p->amount + (float)($p->late_fee ?? 0));
             }
 
-            $expense = Expense::whereYear('expense_date', $monthDate->year)
-                ->whereMonth('expense_date', $monthDate->month)
-                ->sum('amount');
+            $expenseChartQuery = Expense::whereYear('expense_date', $monthDate->year)
+                ->whereMonth('expense_date', $monthDate->month);
+            if ($propertyIds !== null) {
+                $expenseChartQuery->whereIn('property_id', $propertyIds);
+            }
+            $expense = $expenseChartQuery->sum('amount');
 
             $chartData['labels'][] = ucfirst($monthDate->translatedFormat('M Y'));
             $chartData['rent_income'][] = (float) $rentIncome;
@@ -226,6 +266,7 @@ class ReportController extends Controller
 
     public function exportIncome(Request $request)
     {
+        $this->authorizePermission('reports.export');
         $now   = Carbon::now();
         $month = (int) $request->get('month', $now->month);
         $year  = (int) $request->get('year',  $now->year);
@@ -234,6 +275,12 @@ class ReportController extends Controller
 
         $paymentsQuery = Payment::with(['lease.unit.property', 'lease.unit.beneficiary', 'lease.tenant'])
             ->whereNotNull('due_date');
+
+        // ── Filtro de acceso por propiedad ──
+        $propertyIds = auth()->user()->allowedPropertyIds();
+        if ($propertyIds !== null) {
+            $paymentsQuery->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
 
         if ($mode === 'cash') {
             $paymentsQuery->where(function($q) use ($year, $month) {
@@ -313,12 +360,16 @@ class ReportController extends Controller
     }
     public function matrix(Request $request)
     {
+        $this->authorizePermission('reports.view');
+
         $now    = Carbon::now();
         $year   = (int) $request->get('year', $now->year);
         $month  = (int) $request->get('month', $now->month);
         $mode   = $request->get('mode', 'monthly'); // annual or monthly
         $propertyId = $request->get('property_id');
         $dateFilter = $request->get('date_filter', 'period'); // period or paid_at
+
+        $allowedPropertyIds = auth()->user()->allowedPropertyIds();
 
         // Obtener todas las unidades (filtradas por propiedad si se indica)
         $unitsQuery = \App\Models\Unit::with(['property', 'leases' => function($q) {
@@ -327,6 +378,11 @@ class ReportController extends Controller
 
         if ($propertyId) {
             $unitsQuery->where('property_id', $propertyId);
+        }
+
+        // ── Filtro de acceso por propiedad ──
+        if ($allowedPropertyIds !== null) {
+            $unitsQuery->whereIn('property_id', $allowedPropertyIds);
         }
 
         $units = $unitsQuery->orderBy('code')->get();
@@ -384,7 +440,11 @@ class ReportController extends Controller
             }
         }
 
-        $properties = Property::orderBy('name')->get();
+        $propertiesQuery = Property::orderBy('name');
+        if ($allowedPropertyIds !== null) {
+            $propertiesQuery->whereIn('id', $allowedPropertyIds);
+        }
+        $properties = $propertiesQuery->get();
 
         $isExport = $request->boolean('export', false);
 

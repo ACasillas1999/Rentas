@@ -1007,7 +1007,8 @@
                             <path d="M9 6l6 6-6 6" stroke="currentColor" fill="none" stroke-width="2"></path>
                         </svg>
                     </summary>
-                    <div class="group-links">
+                <div class="group-links">
+                        @if(auth()->user()->hasPermission('properties.view'))
                         <a class="nav-link {{ request()->routeIs('properties.*') ? 'active' : '' }}" href="{{ route('properties.index') }}">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
@@ -1017,6 +1018,8 @@
                             </span>
                             <span>Propiedades</span>
                         </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('units.view'))
                         <a class="nav-link {{ request()->routeIs('units.*') ? 'active' : '' }}" href="{{ route('units.index') }}">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
@@ -1028,6 +1031,8 @@
                             </span>
                             <span>Unidades</span>
                         </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('tenants.view'))
                         <a class="nav-link {{ request()->routeIs('tenants.*') ? 'active' : '' }}" href="{{ route('tenants.index') }}">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
@@ -1039,6 +1044,7 @@
                             </span>
                             <span>Inquilinos</span>
                         </a>
+                        @endif
                     </div>
                 </details>
 
@@ -1060,6 +1066,7 @@
                         </svg>
                     </summary>
                     <div class="group-links">
+                        @if(auth()->user()->hasPermission('leases.view'))
                         <a class="nav-link {{ request()->routeIs('leases.*') ? 'active' : '' }}" href="{{ route('leases.index') }}">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
@@ -1071,6 +1078,8 @@
                             </span>
                             <span>Contratos</span>
                         </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('payments.view'))
                         <a class="nav-link {{ request()->routeIs('payments.*') ? 'active' : '' }}" href="{{ route('payments.index') }}">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
@@ -1081,6 +1090,8 @@
                             </span>
                             <span>Pagos</span>
                         </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('reports.view'))
                         <a class="nav-link {{ request()->routeIs('reports.income') ? 'active' : '' }}"
                            href="{{ route('reports.income') }}">
                             <span class="nav-icon" aria-hidden="true">
@@ -1104,6 +1115,8 @@
                             </span>
                             <span>Matriz de Pagos</span>
                         </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('users.view'))
                         <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
                            href="{{ route('users.index') }}">
                             <span class="nav-icon" aria-hidden="true">
@@ -1116,6 +1129,8 @@
                             </span>
                             <span>Usuarios</span>
                         </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('expenses.view'))
                         <a class="nav-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}"
                            href="{{ route('expenses.index') }}">
                             <span class="nav-icon" aria-hidden="true">
@@ -1125,6 +1140,7 @@
                             </span>
                             <span>Gastos</span>
                         </a>
+                        @endif
                         <a class="nav-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}" href="{{ route('notifications.index') }}">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
@@ -1137,7 +1153,12 @@
 
             <div class="sidebar-foot">
                 <div style="margin-bottom:0.55rem;color:#c8d4e4;font-size:0.82rem;">
-                    <strong style="color:#fff;">{{ auth()->user()->name }}</strong><br>
+                    <strong style="color:#fff;">{{ auth()->user()->name }}</strong>
+                    @php
+                        $roleBadges = ['admin' => '🛡️ Admin', 'manager' => '⚙️ Manager', 'viewer' => '👁️ Viewer'];
+                    @endphp
+                    <span style="display:inline-block;margin-left:0.3rem;font-size:0.72rem;padding:0.1rem 0.4rem;border-radius:6px;background:rgba(255,255,255,0.1);color:#a0c4f7;">{{ $roleBadges[auth()->user()->role] ?? auth()->user()->role }}</span>
+                    <br>
                     {{ auth()->user()->email }}
                 </div>
                 <form method="POST" action="{{ route('logout') }}">

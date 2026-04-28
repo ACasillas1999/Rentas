@@ -95,7 +95,9 @@
     </div>
     <div style="display:flex;gap:0.5rem;">
         <button class="btn btn-light" onclick="window.print()">🖨️ Imprimir</button>
+        @if(auth()->user()->hasPermission('payments.edit'))
         <a class="btn btn-primary" href="{{ route('payments.edit', $payment) }}">✏️ Editar</a>
+        @endif
     </div>
 </div>
 
@@ -227,6 +229,7 @@
             @endif
 
             {{-- Upload zone receipt --}}
+            @if(auth()->user()->hasPermission('payments.edit'))
             <form id="form-receipt" action="{{ route('payments.uploadReceipt', $payment) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.6rem;">
@@ -248,6 +251,7 @@
                     ✓ Subir Comprobante(s)
                 </button>
             </form>
+            @endif
         </div>
 
         {{-- Factura Fiscal --}}
@@ -286,6 +290,7 @@
             @endif
 
             {{-- Upload form --}}
+            @if(auth()->user()->hasPermission('payments.edit'))
             <form id="form-invoice" action="{{ route('payments.uploadInvoice', $payment) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 {{-- Folio + Fecha facturación --}}
@@ -313,9 +318,11 @@
                     📋 Guardar Factura
                 </button>
             </form>
+            @endif
         </div>
 
         {{-- Info note --}}
+        @if(auth()->user()->hasPermission('payments.edit'))
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:0.9rem 1rem;display:flex;gap:0.6rem;">
             <span style="font-size:1rem;">ℹ️</span>
             <p style="font-size:0.8rem;margin:0;color:#1e40af;line-height:1.5;">
@@ -323,6 +330,7 @@
                 Al subir comprobante → estado pasa a <strong>Pagado</strong>.
             </p>
         </div>
+        @endif
     </div>
 </div>
 @endsection

@@ -7,50 +7,87 @@ use App\Models\Lease;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Models\Unit;
+use App\Traits\FiltersByUserAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function __invoke()
     {
         $today         = Carbon::today();
         $nextSevenDays = $today->copy()->addDays(7);
         $next30Days    = $today->copy()->addDays(30);
 
-        $totalUnits = Unit::count();
-        $occupiedUnits = Unit::where('status', 'rented')->count();
+        $propertyIds = auth()->user()->allowedPropertyIds();
+
+        // ── Stats filtradas por propiedad ──
+        $unitsQuery = Unit::query();
+        if ($propertyIds !== null) {
+            $unitsQuery->whereIn('property_id', $propertyIds);
+        }
+
+        $totalUnits = (clone $unitsQuery)->count();
+        $occupiedUnits = (clone $unitsQuery)->where('status', 'rented')->count();
         $occupancyRate = $totalUnits > 0 ? round(($occupiedUnits / $totalUnits) * 100) : 0;
 
+        $propertiesQuery = Property::query();
+        if ($propertyIds !== null) {
+            $propertiesQuery->whereIn('id', $propertyIds);
+        }
+
+        $leasesQuery = Lease::where('status', 'active');
+        if ($propertyIds !== null) {
+            $leasesQuery->whereHas('unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
+
+        $pendingQuery = Payment::whereIn('status', ['pending', 'overdue']);
+        if ($propertyIds !== null) {
+            $pendingQuery->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
+
         $stats = [
-            'properties'        => Property::count(),
+            'properties'        => $propertiesQuery->count(),
             'units'             => $totalUnits,
             'occupied_units'    => $occupiedUnits,
             'occupancy_rate'    => $occupancyRate,
-            'active_leases'     => Lease::where('status', 'active')->count(),
-            'pending_or_overdue'=> Payment::whereIn('status', ['pending', 'overdue'])->count(),
+            'active_leases'     => $leasesQuery->count(),
+            'pending_or_overdue'=> $pendingQuery->count(),
         ];
 
-        $overduePayments = Payment::with(['lease.unit.property', 'lease.tenant'])
+        // ── Pagos vencidos ──
+        $overdueQuery = Payment::with(['lease.unit.property', 'lease.tenant'])
             ->where('status', '!=', 'paid')
             ->whereDate('due_date', '<', $today)
             ->orderBy('due_date')
-            ->limit(10)
-            ->get();
+            ->limit(10);
+        if ($propertyIds !== null) {
+            $overdueQuery->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $overduePayments = $overdueQuery->get();
 
-        $upcomingPayments = Payment::with(['lease.unit.property', 'lease.tenant'])
+        // ── Pagos próximos ──
+        $upcomingQuery = Payment::with(['lease.unit.property', 'lease.tenant'])
             ->where('status', '!=', 'paid')
             ->whereBetween('due_date', [$today, $nextSevenDays])
             ->orderBy('due_date')
-            ->limit(10)
-            ->get();
+            ->limit(10);
+        if ($propertyIds !== null) {
+            $upcomingQuery->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $upcomingPayments = $upcomingQuery->get();
 
-        // Contratos que vencen en los próximos 30 días
-        $expiringLeases = Lease::with(['unit.property', 'tenant'])
+        // ── Contratos por vencer ──
+        $expiringQuery = Lease::with(['unit.property', 'tenant'])
             ->where('status', 'active')
             ->whereBetween('end_date', [$today, $next30Days])
-            ->orderBy('end_date')
-            ->get();
+            ->orderBy('end_date');
+        if ($propertyIds !== null) {
+            $expiringQuery->whereHas('unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $expiringLeases = $expiringQuery->get();
 
         return view('dashboard', compact('stats', 'overduePayments', 'upcomingPayments', 'expiringLeases'));
     }
@@ -61,6 +98,12 @@ class DashboardController extends Controller
         $end   = $request->query('end');
 
         $query = Payment::with(['lease.tenant', 'lease.unit.property']);
+
+        // ── Filtro de acceso por propiedad ──
+        $propertyIds = auth()->user()->allowedPropertyIds();
+        if ($propertyIds !== null) {
+            $query->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
 
         if ($start) {
             $query->whereDate('due_date', '>=', $start);

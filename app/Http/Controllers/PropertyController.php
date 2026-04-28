@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Property;
+use App\Traits\FiltersByUserAccess;
 use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function index(Request $request)
     {
+        $this->authorizePermission('properties.view');
+
         $filters = [
             'q' => trim((string) $request->query('q', '')),
             'type' => (string) $request->query('type', ''),
@@ -43,6 +48,9 @@ class PropertyController extends Controller
                 'units as occupied_units_count' => fn ($query) => $query->where('status', 'rented'),
                 'units as available_units_count' => fn ($query) => $query->where('status', 'available'),
             ]);
+
+        // ── Filtro de acceso por propiedad ──
+        $this->applyPropertyIdFilter($baseQuery);
 
         $baseQuery
             ->when($filters['q'] !== '', function ($query) use ($filters) {
@@ -82,11 +90,15 @@ class PropertyController extends Controller
 
     public function create()
     {
+        $this->authorizePermission('properties.create');
+
         return view('properties.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorizePermission('properties.create');
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'type' => ['required', 'in:commercial,residential,mixed,other'],
@@ -110,6 +122,9 @@ class PropertyController extends Controller
 
     public function show(Property $property)
     {
+        $this->authorizePermission('properties.view');
+        $this->authorizeProperty($property->id);
+
         $property->load('units');
 
         return view('properties.show', compact('property'));
@@ -117,11 +132,17 @@ class PropertyController extends Controller
 
     public function edit(Property $property)
     {
+        $this->authorizePermission('properties.edit');
+        $this->authorizeProperty($property->id);
+
         return view('properties.edit', compact('property'));
     }
 
     public function update(Request $request, Property $property)
     {
+        $this->authorizePermission('properties.edit');
+        $this->authorizeProperty($property->id);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'type' => ['required', 'in:commercial,residential,mixed,other'],
@@ -145,6 +166,9 @@ class PropertyController extends Controller
 
     public function destroy(Property $property)
     {
+        $this->authorizePermission('properties.delete');
+        $this->authorizeProperty($property->id);
+
         $property->delete();
 
         return redirect()->route('properties.index')->with('success', 'Propiedad eliminada.');

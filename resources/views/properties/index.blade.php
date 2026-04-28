@@ -5,7 +5,9 @@
 @section('content')
     <div class="page-head">
         
+        @if(auth()->user()->hasPermission('properties.create'))
         <button type="button" class="btn btn-primary" data-modal-target="#modal-create-property">Nueva propiedad</button>
+        @endif
     </div>
 
     <div class="card">
@@ -109,12 +111,16 @@
                             <td class="actions">
                                 <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
                                     <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('properties.show', $property) }}">Ver</a>
+                                    @if(auth()->user()->hasPermission('properties.edit'))
                                     <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('properties.edit', $property) }}">Editar</a>
+                                    @endif
+                                    @if(auth()->user()->hasPermission('properties.delete'))
                                     <form class="inline" method="POST" action="{{ route('properties.destroy', $property) }}">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="return confirm('¿Eliminar propiedad?')">Eliminar</button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -148,12 +154,16 @@
                     </div>
                     <div class="property-card-actions">
                         <a href="{{ route('properties.show', $property) }}" class="card-btn">Ver</a>
+                        @if(auth()->user()->hasPermission('properties.edit'))
                         <a href="{{ route('properties.edit', $property) }}" class="card-btn">Editar</a>
+                        @endif
+                        @if(auth()->user()->hasPermission('properties.delete'))
                         <form method="POST" action="{{ route('properties.destroy', $property) }}" class="inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="card-btn delete" onclick="return confirm('¿Eliminar?')">Borrar</button>
                         </form>
+                        @endif
                     </div>
                 </div>
             @empty
@@ -166,6 +176,7 @@
 @endsection
 
 @push('modals')
+    @if(auth()->user()->hasPermission('properties.create'))
     <div class="modal-overlay" id="modal-create-property" data-modal-auto-open="true">
         <div class="modal-dialog">
             <div class="modal-head">
@@ -185,6 +196,7 @@
             </div>
         </div>
     </div>
+    @endif
 @endpush
 
 @push('styles')

@@ -216,17 +216,19 @@
                                 <td style="padding:0.8rem 0.5rem;text-align:right;">
                                     <div style="display:flex;gap:0.4rem;justify-content:flex-end;">
                                         <a class="btn btn-light" style="padding:0.3rem 0.6rem;font-size:0.8rem;" href="{{ route('payments.show', $payment) }}">Ver</a>
-                                        @php
-                                            $btnColor = match($payment->status) {
-                                                'overdue'  => '#b82020',
-                                                'invoiced' => '#1e40af',
-                                                'partial'  => '#1e40af',
-                                                default    => '#c47a0a',
-                                            };
-                                        @endphp
-                                        <button class="btn" style="padding:0.3rem 0.6rem;font-size:0.8rem;background:{{ $btnColor }};color:#fff;border:none;" data-modal-trigger="#modal-pay-ov-{{ $payment->id }}">
-                                            {{ in_array($payment->status, ['invoiced', 'partial']) ? 'Cobrar' : 'Facturar' }}
-                                        </button>
+                                        @if(auth()->user()->hasPermission('payments.edit'))
+                                            @php
+                                                $btnColor = match($payment->status) {
+                                                    'overdue'  => '#b82020',
+                                                    'invoiced' => '#1e40af',
+                                                    'partial'  => '#1e40af',
+                                                    default    => '#c47a0a',
+                                                };
+                                            @endphp
+                                            <button class="btn" style="padding:0.3rem 0.6rem;font-size:0.8rem;background:{{ $btnColor }};color:#fff;border:none;" data-modal-trigger="#modal-pay-ov-{{ $payment->id }}">
+                                                {{ in_array($payment->status, ['invoiced', 'partial']) ? 'Cobrar' : 'Facturar' }}
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -277,17 +279,19 @@
                                 <td style="padding:0.8rem 0.5rem;text-align:right;">
                                     <div style="display:flex;gap:0.4rem;justify-content:flex-end;">
                                         <a class="btn btn-light" style="padding:0.3rem 0.6rem;font-size:0.8rem;" href="{{ route('payments.show', $payment) }}">Ver</a>
-                                        @php
-                                            $btnColor = match($payment->status) {
-                                                'overdue'  => '#b82020',
-                                                'invoiced' => '#1e40af',
-                                                'partial'  => '#1e40af',
-                                                default    => '#c47a0a',
-                                            };
-                                        @endphp
-                                        <button class="btn" style="padding:0.3rem 0.6rem;font-size:0.8rem;background:{{ $btnColor }};color:#fff;border:none;" data-modal-trigger="#modal-pay-up-{{ $payment->id }}">
-                                            {{ in_array($payment->status, ['invoiced', 'partial']) ? 'Cobrar' : 'Facturar' }}
-                                        </button>
+                                        @if(auth()->user()->hasPermission('payments.edit'))
+                                            @php
+                                                $btnColor = match($payment->status) {
+                                                    'overdue'  => '#b82020',
+                                                    'invoiced' => '#1e40af',
+                                                    'partial'  => '#1e40af',
+                                                    default    => '#c47a0a',
+                                                };
+                                            @endphp
+                                            <button class="btn" style="padding:0.3rem 0.6rem;font-size:0.8rem;background:{{ $btnColor }};color:#fff;border:none;" data-modal-trigger="#modal-pay-up-{{ $payment->id }}">
+                                                {{ in_array($payment->status, ['invoiced', 'partial']) ? 'Cobrar' : 'Facturar' }}
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -368,7 +372,7 @@
                     <h2 class="modal-title" style="font-size:1rem;margin-bottom:0.1rem;" id="cal-modal-title">Registrar Pago</h2>
                     <div class="muted" style="font-size:0.8rem;" id="cal-modal-subtitle"></div>
                 </div>
-                <button class="modal-close" data-cal-close>✕</button>
+                <button class="modal-close" data-cal-close>&#x2715;</button>
             </div>
             <div class="modal-body" style="padding:1.25rem;">
 
@@ -376,11 +380,11 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.2rem;">
                     <div>
                         <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#64748b;">Inquilino</div>
-                        <strong id="cal-modal-tenant" style="font-size:0.9rem;">—</strong>
+                        <strong id="cal-modal-tenant" style="font-size:0.9rem;">&mdash;</strong>
                     </div>
                     <div>
                         <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#64748b;">Unidad / Propiedad</div>
-                        <span id="cal-modal-property" style="font-weight:600;font-size:0.9rem;">—</span>
+                        <span id="cal-modal-property" style="font-weight:600;font-size:0.9rem;">&mdash;</span>
                     </div>
                     <div>
                         <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;color:#64748b;">Monto pactado</div>
@@ -388,89 +392,97 @@
                     </div>
                 </div>
 
-                {{-- Step indicator --}}
-                <div id="cal-steps" style="display:flex;align-items:center;margin-bottom:1.4rem;"></div>
+                @if(auth()->user()->hasPermission('payments.edit'))
+                    {{-- Step indicator --}}
+                    <div id="cal-steps" style="display:flex;align-items:center;margin-bottom:1.4rem;"></div>
 
-                {{-- Tabs --}}
-                <div style="display:flex;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:1.2rem;">
-                    <button type="button" id="cal-tab-btn-invoice"
-                        style="flex:1;padding:0.65rem;font-size:0.85rem;font-weight:600;border:none;cursor:pointer;transition:background 0.15s;"
-                        onclick="calSwitchTab('invoice')">📋 Registrar Factura</button>
-                    <button type="button" id="cal-tab-btn-pay"
-                        style="flex:1;padding:0.65rem;font-size:0.85rem;font-weight:600;border:none;border-left:1px solid #e2e8f0;cursor:pointer;transition:background 0.15s;"
-                        onclick="calSwitchTab('pay')">💰 Registrar Pago</button>
-                </div>
+                    {{-- Tabs --}}
+                    <div style="display:flex;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:1.2rem;">
+                        <button type="button" id="cal-tab-btn-invoice"
+                            style="flex:1;padding:0.65rem;font-size:0.85rem;font-weight:600;border:none;cursor:pointer;transition:background 0.15s;"
+                            onclick="calSwitchTab('invoice')">&#x1F4CB; Registrar Factura</button>
+                        <button type="button" id="cal-tab-btn-pay"
+                            style="flex:1;padding:0.65rem;font-size:0.85rem;font-weight:600;border:none;border-left:1px solid #e2e8f0;cursor:pointer;transition:background 0.15s;"
+                            onclick="calSwitchTab('pay')">&#x1F4B0; Registrar Pago</button>
+                    </div>
 
-                {{-- Tab: Factura --}}
-                <div id="cal-tab-invoice">
-                    <form id="cal-invoice-form" method="POST" action="#" enctype="multipart/form-data">
-                        @csrf
-                        <div class="form-grid">
-                            <div class="field-span-full">
-                                <label>Folio de Factura</label>
-                                <input type="text" id="cal-invoice-folio" name="invoice_folio" placeholder="Ej: A-00123 o UUID del CFDI">
+                    {{-- Tab: Factura --}}
+                    <div id="cal-tab-invoice">
+                        <form id="cal-invoice-form" method="POST" action="#" enctype="multipart/form-data">
+                            @csrf
+                            <div class="form-grid">
+                                <div class="field-span-full">
+                                    <label>Folio de Factura</label>
+                                    <input type="text" id="cal-invoice-folio" name="invoice_folio" placeholder="Ej: A-00123 o UUID del CFDI">
+                                </div>
+                                <div class="field-span-full">
+                                    <label>Fecha de Facturación</label>
+                                    <input type="date" id="cal-invoice-date" name="invoiced_at">
+                                </div>
+                                <div>
+                                    <label>PDF(s) de Factura</label>
+                                    <input type="file" name="invoice_pdf[]" accept=".pdf" multiple>
+                                </div>
+                                <div>
+                                    <label>XML(s) CFDI</label>
+                                    <input type="file" name="invoice_xml[]" accept=".xml" multiple>
+                                </div>
                             </div>
-                            <div class="field-span-full">
-                                <label>Fecha de Facturación</label>
-                                <input type="date" id="cal-invoice-date" name="invoiced_at">
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">&#x1F4CB; Guardar Factura</button>
+                                <a id="cal-modal-detail-link" href="#" class="btn btn-light">Ver ficha completa</a>
                             </div>
-                            <div>
-                                <label>PDF(s) de Factura</label>
-                                <input type="file" name="invoice_pdf[]" accept=".pdf" multiple>
-                            </div>
-                            <div>
-                                <label>XML(s) CFDI</label>
-                                <input type="file" name="invoice_xml[]" accept=".xml" multiple>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">📋 Guardar Factura</button>
-                            <a id="cal-modal-detail-link" href="#" class="btn btn-light">Ver ficha completa</a>
-                        </div>
-                    </form>
-                </div>
+                        </form>
+                    </div>
 
-                {{-- Tab: Pago --}}
-                <div id="cal-tab-pay" style="display:none;">
-                    <form id="cal-pay-form" method="POST" action="#" enctype="multipart/form-data">
-                        @csrf
-                        <div class="form-grid">
-                            <div>
-                                <label>Fecha de pago</label>
-                                <input type="date" id="cal-modal-paid-at" name="paid_at">
+                    {{-- Tab: Pago --}}
+                    <div id="cal-tab-pay" style="display:none;">
+                        <form id="cal-pay-form" method="POST" action="#" enctype="multipart/form-data">
+                            @csrf
+                            <div class="form-grid">
+                                <div>
+                                    <label>Fecha de pago</label>
+                                    <input type="date" id="cal-modal-paid-at" name="paid_at">
+                                </div>
+                                <div>
+                                    <label>Monto pagado ($)</label>
+                                    <input type="number" id="cal-modal-paid-amount" name="paid_amount" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <div>
+                                    <label>Recargo / Mora ($)</label>
+                                    <input type="number" id="cal-modal-late-fee" name="late_fee" min="0" step="0.01" value="0.00">
+                                </div>
+                                <div>
+                                    <label>Método de pago</label>
+                                    <select id="cal-modal-method" name="payment_method">
+                                        <option value="">&mdash; Seleccionar &mdash;</option>
+                                        <option>Efectivo</option><option>Transferencia</option>
+                                        <option>Tarjeta</option><option>Cheque</option><option>Otro</option>
+                                    </select>
+                                </div>
+                                <div class="field-span-full">
+                                    <label>No. de operación / Referencia</label>
+                                    <input type="text" id="cal-modal-reference" name="reference" placeholder="No. de transferencia, etc.">
+                                </div>
+                                <div class="field-span-full">
+                                    <label>Comprobante de pago (foto o PDF)</label>
+                                    <input type="file" id="cal-modal-receipt" name="receipt" accept="image/*,.pdf">
+                                </div>
                             </div>
-                            <div>
-                                <label>Monto pagado ($)</label>
-                                <input type="number" id="cal-modal-paid-amount" name="paid_amount" min="0" step="0.01" placeholder="0.00">
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">&#x2713; Confirmar Pago</button>
+                                <a id="cal-modal-detail-link2" href="#" class="btn btn-light">Ver ficha completa</a>
+                                <button type="button" class="btn btn-light" data-cal-close>Cancelar</button>
                             </div>
-                            <div>
-                                <label>Recargo / Mora ($)</label>
-                                <input type="number" id="cal-modal-late-fee" name="late_fee" min="0" step="0.01" value="0.00">
-                            </div>
-                            <div>
-                                <label>Método de pago</label>
-                                <select id="cal-modal-method" name="payment_method">
-                                    <option value="">— Seleccionar —</option>
-                                    <option>Efectivo</option><option>Transferencia</option>
-                                    <option>Tarjeta</option><option>Cheque</option><option>Otro</option>
-                                </select>
-                            </div>
-                            <div class="field-span-full">
-                                <label>No. de operación / Referencia</label>
-                                <input type="text" id="cal-modal-reference" name="reference" placeholder="No. de transferencia, etc.">
-                            </div>
-                            <div class="field-span-full">
-                                <label>Comprobante de pago (foto o PDF)</label>
-                                <input type="file" id="cal-modal-receipt" name="receipt" accept="image/*,.pdf">
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">✓ Confirmar Pago</button>
-                            <a id="cal-modal-detail-link2" href="#" class="btn btn-light">Ver ficha completa</a>
-                            <button type="button" class="btn btn-light" data-cal-close>Cancelar</button>
-                        </div>
-                    </form>
-                </div>
+                        </form>
+                    </div>
+                @else
+                    {{-- Solo lectura: viewer ve la información pero no puede operar --}}
+                    <div style="padding:1.2rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;text-align:center;">
+                        <p style="margin:0 0 1rem;color:#64748b;font-size:0.9rem;">No tienes permisos para registrar pagos o facturas.</p>
+                        <a id="cal-modal-detail-link" href="#" class="btn btn-light">Ver ficha completa</a>
+                    </div>
+                @endif
 
             </div>
         </div>
@@ -559,30 +571,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (p.status === 'paid') { window.location.href = url; return; }
 
-            // Populate info
+            // Populate info (use ?. to avoid errors when elements don't exist for viewers)
             document.getElementById('cal-modal-title').textContent    = info.event.title;
             document.getElementById('cal-modal-subtitle').textContent = p.property;
             document.getElementById('cal-modal-tenant').textContent   = info.event.title;
             document.getElementById('cal-modal-property').textContent = p.property;
             document.getElementById('cal-modal-amount').textContent   = p.amount;
-            document.getElementById('cal-modal-detail-link').href     = url;
-            document.getElementById('cal-modal-detail-link2').href    = url;
-            document.getElementById('cal-invoice-form').action        = `/payments/${id}/upload-invoice`;
-            document.getElementById('cal-pay-form').action            = `/payments/${id}/mark-paid`;
-            document.getElementById('cal-modal-paid-at').value        = new Date().toISOString().split('T')[0];
-            document.getElementById('cal-modal-paid-amount').value    = p.rawAmount || '';
-            document.getElementById('cal-modal-late-fee').value       = p.lateFee || 0;
-            document.getElementById('cal-modal-method').value         = '';
-            document.getElementById('cal-modal-reference').value      = '';
-            document.getElementById('cal-modal-receipt').value        = '';
-            document.getElementById('cal-invoice-folio').value        = '';
-            document.getElementById('cal-invoice-date').value         = new Date().toISOString().split('T')[0];
+            const dlLink  = document.getElementById('cal-modal-detail-link');
+            const dlLink2 = document.getElementById('cal-modal-detail-link2');
+            if (dlLink)  dlLink.href  = url;
+            if (dlLink2) dlLink2.href = url;
+            const invoiceForm = document.getElementById('cal-invoice-form');
+            const payForm     = document.getElementById('cal-pay-form');
+            if (invoiceForm) invoiceForm.action = `/payments/${id}/upload-invoice`;
+            if (payForm)     payForm.action     = `/payments/${id}/mark-paid`;
+            const elPaidAt     = document.getElementById('cal-modal-paid-at');
+            const elPaidAmount = document.getElementById('cal-modal-paid-amount');
+            const elLateFee    = document.getElementById('cal-modal-late-fee');
+            const elMethod     = document.getElementById('cal-modal-method');
+            const elReference  = document.getElementById('cal-modal-reference');
+            const elReceipt    = document.getElementById('cal-modal-receipt');
+            const elFolio      = document.getElementById('cal-invoice-folio');
+            const elInvDate    = document.getElementById('cal-invoice-date');
+            if (elPaidAt)     elPaidAt.value     = new Date().toISOString().split('T')[0];
+            if (elPaidAmount) elPaidAmount.value  = p.rawAmount || '';
+            if (elLateFee)    elLateFee.value     = p.lateFee || 0;
+            if (elMethod)     elMethod.value      = '';
+            if (elReference)  elReference.value   = '';
+            if (elReceipt)    elReceipt.value     = '';
+            if (elFolio)      elFolio.value       = '';
+            if (elInvDate)    elInvDate.value     = new Date().toISOString().split('T')[0];
 
-            // Build step indicator
-            document.getElementById('cal-steps').innerHTML = buildSteps(p.status);
+            // Build step indicator (only exists for users with payments.edit)
+            const stepsEl = document.getElementById('cal-steps');
+            if (stepsEl) stepsEl.innerHTML = buildSteps(p.status);
 
-            // Set initial tab based on status
-            calSwitchTab(p.status === 'invoiced' || p.status === 'partial' ? 'pay' : 'invoice');
+            // Set initial tab based on status (only relevant when tabs exist)
+            if (document.getElementById('cal-tab-btn-invoice')) {
+                calSwitchTab(p.status === 'invoiced' || p.status === 'partial' ? 'pay' : 'invoice');
+            }
 
             document.getElementById('cal-quick-modal').classList.add('is-open');
         },

@@ -5,14 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Lease;
 use App\Models\Payment;
 use App\Models\Tenant;
+use App\Traits\FiltersByUserAccess;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function index(Request $request)
     {
+        $this->authorizePermission('payments.view');
+
         $filters = $this->indexFilters($request);
 
         $perPageOptions = [15, 30, 50];
@@ -35,6 +40,9 @@ class PaymentController extends Controller
         }
 
         $query = $this->paymentIndexQuery($filters)->with(['lease.unit.property', 'lease.tenant']);
+
+        // ── Filtro de acceso por propiedad ──
+        $this->applyPaymentPropertyFilter($query);
 
         $payments = $query
             ->orderBy($sortable[$filters['sort']], $filters['direction'])
@@ -64,13 +72,18 @@ class PaymentController extends Controller
 
     public function create()
     {
-        $leases = Lease::with(['unit.property', 'tenant'])->orderByDesc('start_date')->get();
+        $this->authorizePermission('payments.create');
+
+        $leases = Lease::with(['unit.property', 'tenant'])->orderByDesc('start_date');
+        $this->applyLeasePropertyFilter($leases);
 
         return view('payments.create', compact('leases'));
     }
 
     public function store(Request $request)
     {
+        $this->authorizePermission('payments.create');
+
         $data = $this->validatePayment($request);
         $data = $this->normalizePaymentFields($data);
 
@@ -81,6 +94,8 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
+        $this->authorizePermission('payments.view');
+
         $payment->load('lease.unit.property', 'lease.tenant');
 
         // Todos los pagos del mismo contrato para el navegador de periodos
@@ -93,6 +108,8 @@ class PaymentController extends Controller
 
     public function edit(Payment $payment)
     {
+        $this->authorizePermission('payments.edit');
+
         $leases = Lease::with(['unit.property', 'tenant'])->orderByDesc('start_date')->get();
 
         return view('payments.edit', compact('payment', 'leases'));
@@ -100,6 +117,8 @@ class PaymentController extends Controller
 
     public function update(Request $request, Payment $payment)
     {
+        $this->authorizePermission('payments.edit');
+
         $data = $this->validatePayment($request);
         $data = $this->normalizePaymentFields($data);
 
@@ -110,6 +129,8 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment)
     {
+        $this->authorizePermission('payments.delete');
+
         $payment->delete();
 
         return redirect()->route('payments.index')->with('success', 'Pago eliminado.');
@@ -117,6 +138,8 @@ class PaymentController extends Controller
 
     public function markPaid(Request $request, Payment $payment)
 {
+    $this->authorizePermission('payments.edit');
+
     $data = $request->validate([
         'paid_at'        => ['nullable', 'date'],
         'paid_amount'    => ['nullable', 'numeric', 'min:0'],
@@ -236,12 +259,16 @@ class PaymentController extends Controller
 
     public function bulkEdit(Lease $lease)
     {
+        $this->authorizePermission('payments.edit');
+
         $payments = $lease->payments()->orderBy('due_date', 'asc')->get();
         return view('leases.bulk_edit', compact('lease', 'payments'));
     }
 
     public function bulkUpdate(Request $request, Lease $lease)
     {
+        $this->authorizePermission('payments.edit');
+
         $request->validate([
             'payments' => 'required|array',
             'payments.*.id' => 'required|exists:payments,id',

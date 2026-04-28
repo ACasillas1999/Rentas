@@ -12,7 +12,7 @@
         </div>
     </div>
 
-    <div class="card" style="max-width:800px;">
+    <div class="card" style="max-width:1000px;">
         <form action="{{ route('users.store') }}" method="POST">
             @csrf
             @include('users._form')

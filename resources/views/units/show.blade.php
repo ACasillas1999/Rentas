@@ -18,7 +18,6 @@
             <p><strong>Propiedad:</strong> {{ $unit->property->name ?? '-' }}</p>
             <p><strong>Piso:</strong> {{ $unit->floor ?: '-' }}</p>
             <p><strong>Área:</strong> {{ $unit->area_m2 ? number_format((float) $unit->area_m2, 2) . ' m²' : '-' }}</p>
-            <p><strong>Renta mensual:</strong> {{ $unit->currency }} {{ number_format((float) $unit->monthly_rent, 2) }}</p>
             <p><strong>Beneficiario:</strong> {{ $unit->beneficiary->name ?? 'N/A' }}</p>
             <p><strong>Estatus:</strong> {{ ucfirst($unit->status) }}</p>
             <p><strong>Notas:</strong> {{ $unit->notes ?: '-' }}</p>

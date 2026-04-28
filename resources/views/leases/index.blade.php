@@ -5,7 +5,9 @@
 @section('content')
     <div class="page-head">
         
+        @if(auth()->user()->hasPermission('leases.create'))
         <button type="button" class="btn btn-primary" data-modal-target="#modal-create-lease">Nuevo contrato</button>
+        @endif
     </div>
 
     <div class="card">
@@ -110,16 +112,20 @@
                             @endif
                         </td>
                         <td class="actions" style="display:flex;gap:0.5rem;align-items:center;">
-                            @if($lease->status === 'active')
+                            @if(auth()->user()->hasPermission('leases.create') && $lease->status === 'active')
                                 <a class="btn btn-light" href="{{ route('leases.renew', $lease) }}" title="Renovar">🔄</a>
                             @endif
                             <a class="btn btn-light" href="{{ route('leases.show', $lease) }}">Ver</a>
+                            @if(auth()->user()->hasPermission('leases.edit'))
                             <a class="btn btn-light" href="{{ route('leases.edit', $lease) }}">Editar</a>
+                            @endif
+                            @if(auth()->user()->hasPermission('leases.delete'))
                             <form action="{{ route('leases.destroy', $lease) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este contrato y TODOS SUS PAGOS? Esta acción no se puede deshacer.');" style="margin:0;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-light" style="color:var(--danger); border-color:var(--danger); background:transparent;">🗑️</button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                 @empty
@@ -167,8 +173,10 @@
 
                 <div class="lease-card-actions">
                     <a class="btn btn-primary" href="{{ route('leases.show', $lease) }}">Ver Detalle</a>
+                    @if(auth()->user()->hasPermission('leases.edit'))
                     <a class="btn btn-light" href="{{ route('leases.edit', $lease) }}">Editar</a>
-                    @if($lease->status === 'active')
+                    @endif
+                    @if(auth()->user()->hasPermission('leases.create') && $lease->status === 'active')
                         <a class="btn btn-light" href="{{ route('leases.renew', $lease) }}">🔄</a>
                     @endif
                 </div>
@@ -184,6 +192,7 @@
 @endsection
 
 @push('modals')
+    @if(auth()->user()->hasPermission('leases.create'))
     <div class="modal-overlay" id="modal-create-lease" data-modal-auto-open="true">
         <div class="modal-dialog">
             <div class="modal-head">
@@ -203,5 +212,6 @@
             </div>
         </div>
     </div>
+    @endif
 @endpush
 

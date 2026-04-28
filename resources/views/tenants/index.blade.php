@@ -5,7 +5,9 @@
 @section('content')
     <div class="page-head">
         
+        @if(auth()->user()->hasPermission('tenants.create'))
         <button type="button" class="btn btn-primary" data-modal-target="#modal-create-tenant">Nuevo inquilino</button>
+        @endif
     </div>
 
     <div class="card">
@@ -73,12 +75,16 @@
                             <td class="actions">
                                 <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
                                     <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('tenants.show', $tenant) }}">Ver</a>
+                                    @if(auth()->user()->hasPermission('tenants.edit'))
                                     <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('tenants.edit', $tenant) }}">Editar</a>
+                                    @endif
+                                    @if(auth()->user()->hasPermission('tenants.delete'))
                                     <form class="inline" method="POST" action="{{ route('tenants.destroy', $tenant) }}">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="return confirm('¿Eliminar inquilino?')">Eliminar</button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -112,12 +118,16 @@
                     </div>
                     <div class="tenant-card-actions">
                         <a href="{{ route('tenants.show', $tenant) }}" class="card-btn">Ver</a>
+                        @if(auth()->user()->hasPermission('tenants.edit'))
                         <a href="{{ route('tenants.edit', $tenant) }}" class="card-btn">Editar</a>
+                        @endif
+                        @if(auth()->user()->hasPermission('tenants.delete'))
                         <form method="POST" action="{{ route('tenants.destroy', $tenant) }}" class="inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="card-btn delete" onclick="return confirm('¿Eliminar?')">Borrar</button>
                         </form>
+                        @endif
                     </div>
                 </div>
             @empty
@@ -224,6 +234,7 @@
 @endpush
 
 @push('modals')
+    @if(auth()->user()->hasPermission('tenants.create'))
     <div class="modal-overlay" id="modal-create-tenant" data-modal-auto-open="true">
         <div class="modal-dialog">
             <div class="modal-head">
@@ -243,5 +254,6 @@
             </div>
         </div>
     </div>
+    @endif
 @endpush
 

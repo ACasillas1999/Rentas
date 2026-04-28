@@ -34,7 +34,6 @@
                     <tr>
                         <th>Código</th>
                         <th>Piso</th>
-                        <th>Renta Mensual</th>
                         <th>Estatus</th>
                     </tr>
                 </thead>
@@ -43,7 +42,6 @@
                         <tr>
                             <td>{{ $unit->code }}</td>
                             <td>{{ $unit->floor ?: '-' }}</td>
-                            <td>{{ $unit->currency }} {{ number_format((float) $unit->monthly_rent, 2) }}</td>
                             <td>{{ ucfirst($unit->status) }}</td>
                         </tr>
                     @endforeach

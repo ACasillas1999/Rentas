@@ -40,27 +40,13 @@
         </div>
     </div>
 
-    <!-- SECCIÓN 2: ECONOMÍA Y BENEFICIARIO -->
+    <!-- SECCIÓN 2: BENEFICIARIO DEL PAGO -->
     <div style="background: var(--surface-soft); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border);">
         <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-            Valores Sugeridos y Pago
+            Pago
         </h4>
         <div class="form-grid">
-            <div>
-                <label for="monthly_rent">Renta Mensual Sugerida</label>
-                <div style="position: relative;">
-                    <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted);">$</span>
-                    <input id="monthly_rent" name="monthly_rent" type="number" step="0.01" value="{{ old('monthly_rent', $unit->monthly_rent ?? '') }}" style="padding-left: 25px;" placeholder="0.00">
-                </div>
-            </div>
-            <div>
-                <label for="maintenance_amount">Cuota Mantenimiento</label>
-                <div style="position: relative;">
-                    <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted);">$</span>
-                    <input id="maintenance_amount" name="maintenance_amount" type="number" step="0.01" value="{{ old('maintenance_amount', $unit->maintenance_amount ?? '') }}" style="padding-left: 25px;" placeholder="0.00">
-                </div>
-            </div>
             <div class="field-span-full">
                 <label for="beneficiary_id">Beneficiario del Pago</label>
                 <select id="beneficiary_id" name="beneficiary_id">
@@ -75,6 +61,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- SECCIÓN 3: DETALLES EXTRA -->
     <div style="background: var(--surface-soft); padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border);">

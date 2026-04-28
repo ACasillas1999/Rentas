@@ -5,13 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
+use App\Traits\FiltersByUserAccess;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class UnitController extends Controller
 {
+    use FiltersByUserAccess;
+
     public function index(Request $request)
     {
+        $this->authorizePermission('units.view');
+
         $filters = [
             'q' => trim((string) $request->query('q', '')),
             'property_id' => (string) $request->query('property_id', ''),
@@ -41,6 +46,9 @@ class UnitController extends Controller
 
         $query = Unit::query()->with(['property', 'beneficiary']);
 
+        // ── Filtro de acceso por propiedad ──
+        $this->applyPropertyFilter($query);
+
         $query
             ->when($filters['q'] !== '', function ($builder) use ($filters) {
                 $like = '%' . $filters['q'] . '%';
@@ -59,7 +67,11 @@ class UnitController extends Controller
             ->paginate($filters['per_page'])
             ->withQueryString();
 
-        $properties = Property::orderBy('name')->get();
+        // Solo mostrar propiedades accesibles en el filtro
+        $propertiesQuery = Property::orderBy('name');
+        $this->applyPropertyIdFilter($propertiesQuery);
+        $properties = $propertiesQuery->get();
+
         $users = User::orderBy('name')->get();
 
         return view('units.index', compact('units', 'properties', 'users', 'filters', 'perPageOptions'));
@@ -67,7 +79,12 @@ class UnitController extends Controller
 
     public function create()
     {
-        $properties = Property::orderBy('name')->get();
+        $this->authorizePermission('units.create');
+
+        $propertiesQuery = Property::orderBy('name');
+        $this->applyPropertyIdFilter($propertiesQuery);
+        $properties = $propertiesQuery->get();
+
         $users = User::orderBy('name')->get();
 
         return view('units.create', compact('properties', 'users'));
@@ -75,6 +92,8 @@ class UnitController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizePermission('units.create');
+
         $data = $request->validate([
             'property_id' => ['required', 'exists:properties,id'],
             'beneficiary_id' => ['nullable', 'exists:users,id'],
@@ -91,6 +110,9 @@ class UnitController extends Controller
             'photo'      => ['nullable', 'image', 'max:2048'],
         ]);
 
+        // Verificar acceso a la propiedad
+        $this->authorizeProperty((int) $data['property_id']);
+
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')->store('units', 'public');
         }
@@ -102,6 +124,9 @@ class UnitController extends Controller
 
     public function show(Unit $unit)
     {
+        $this->authorizePermission('units.view');
+        $this->authorizeProperty($unit->property_id);
+
         $unit->load('property', 'leases.tenant');
 
         return view('units.show', compact('unit'));
@@ -109,7 +134,13 @@ class UnitController extends Controller
 
     public function edit(Unit $unit)
     {
-        $properties = Property::orderBy('name')->get();
+        $this->authorizePermission('units.edit');
+        $this->authorizeProperty($unit->property_id);
+
+        $propertiesQuery = Property::orderBy('name');
+        $this->applyPropertyIdFilter($propertiesQuery);
+        $properties = $propertiesQuery->get();
+
         $users = User::orderBy('name')->get();
 
         return view('units.edit', compact('unit', 'properties', 'users'));
@@ -117,6 +148,9 @@ class UnitController extends Controller
 
     public function update(Request $request, Unit $unit)
     {
+        $this->authorizePermission('units.edit');
+        $this->authorizeProperty($unit->property_id);
+
         $data = $request->validate([
             'property_id' => ['required', 'exists:properties,id'],
             'beneficiary_id' => ['nullable', 'exists:users,id'],
@@ -146,6 +180,9 @@ class UnitController extends Controller
 
     public function destroy(Unit $unit)
     {
+        $this->authorizePermission('units.delete');
+        $this->authorizeProperty($unit->property_id);
+
         $unit->delete();
 
         return redirect()->route('units.index')->with('success', 'Local/unidad eliminada.');

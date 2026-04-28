@@ -5,7 +5,9 @@
 @section('content')
     <div class="page-head">
         
+        @if(auth()->user()->hasPermission('units.create'))
         <button type="button" class="btn btn-primary" data-modal-target="#modal-create-unit">Nueva unidad</button>
+        @endif
     </div>
 
     <div class="card">
@@ -104,12 +106,16 @@
                             <td class="actions">
                                 <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
                                     <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('units.show', $unit) }}">Ver</a>
+                                    @if(auth()->user()->hasPermission('units.edit'))
                                     <a class="btn btn-light" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" href="{{ route('units.edit', $unit) }}">Editar</a>
+                                    @endif
+                                    @if(auth()->user()->hasPermission('units.delete'))
                                     <form class="inline" method="POST" action="{{ route('units.destroy', $unit) }}">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="return confirm('¿Eliminar unidad?')">Eliminar</button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -156,12 +162,16 @@
                     </div>
                     <div class="unit-card-actions">
                         <a href="{{ route('units.show', $unit) }}" class="card-btn">Ver</a>
+                        @if(auth()->user()->hasPermission('units.edit'))
                         <a href="{{ route('units.edit', $unit) }}" class="card-btn">Editar</a>
+                        @endif
+                        @if(auth()->user()->hasPermission('units.delete'))
                         <form method="POST" action="{{ route('units.destroy', $unit) }}" class="inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="card-btn delete" onclick="return confirm('¿Eliminar?')">Borrar</button>
                         </form>
+                        @endif
                     </div>
                 </div>
             @empty
@@ -264,6 +274,7 @@
 @endpush
 
 @push('modals')
+    @if(auth()->user()->hasPermission('units.create'))
     <div class="modal-overlay" id="modal-create-unit" data-modal-auto-open="true">
         <div class="modal-dialog">
             <div class="modal-head">
@@ -283,5 +294,6 @@
             </div>
         </div>
     </div>
+    @endif
 @endpush
 
