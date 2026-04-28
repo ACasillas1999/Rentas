@@ -408,12 +408,12 @@ class PaymentController extends Controller
                         ->orWhereHas('lease.unit.property', fn ($property) => $property->where('name', 'like', $like));
                 });
             })
-            ->when($filters['type'] !== '', fn ($builder) => $builder->where('type', $filters['type']))
-            ->when($filters['status'] !== '', fn ($builder) => $builder->where('status', $filters['status']))
-            ->when($filters['lease_id'] !== '', fn ($builder) => $builder->where('lease_id', $filters['lease_id']))
+            ->when($filters['type'] !== '', fn ($builder) => $builder->where('payments.type', $filters['type']))
+            ->when($filters['status'] !== '', fn ($builder) => $builder->where('payments.status', $filters['status']))
+            ->when($filters['lease_id'] !== '', fn ($builder) => $builder->where('payments.lease_id', $filters['lease_id']))
             ->when($filters['tenant_id'] !== '', fn ($builder) => $builder->whereHas('lease', fn ($lease) => $lease->where('tenant_id', $filters['tenant_id'])))
-            ->when($filters['due_from'] !== '', fn ($builder) => $builder->whereDate('due_date', '>=', $filters['due_from']))
-            ->when($filters['due_to'] !== '', fn ($builder) => $builder->whereDate('due_date', '<=', $filters['due_to']));
+            ->when($filters['due_from'] !== '', fn ($builder) => $builder->whereDate('payments.due_date', '>=', $filters['due_from']))
+            ->when($filters['due_to'] !== '', fn ($builder) => $builder->whereDate('payments.due_date', '<=', $filters['due_to']));
     }
 
     private function availableTenants(array $filters)
