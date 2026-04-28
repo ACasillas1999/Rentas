@@ -146,7 +146,7 @@
                                 <label>Método de pago</label>
                                 <select name="payment_method">
                                     <option value="">— Seleccionar —</option>
-                                    @foreach(['Efectivo','Transferencia','Tarjeta','Cheque','Otro'] as $m)
+                                    @foreach(['Transferencia','Efectivo','Cheque','Depósito','Tarjeta'] as $m)
                                         <option value="{{ $m }}" @selected($payment->payment_method === $m)>{{ $m }}</option>
                                     @endforeach
                                 </select>

@@ -27,6 +27,12 @@
 .dz input { display:none; }
 .dz-icon { color:#94a3b8; margin-bottom:0.4rem; }
 .dz-text { font-size:0.82rem; color:#475569; font-weight:500; }
+.delete-btn { color:#ef4444; cursor:pointer; opacity:0; transition:opacity 0.2s; padding:0 0.4rem; font-size:1rem; line-height:1; }
+.file-chip:hover .delete-btn, .receipt-item:hover .delete-btn { opacity:1; }
+.receipt-item { position:relative; margin-bottom:0.5rem; }
+.receipt-item img { border-radius:8px; border:1px solid #e2e8f0; width:100%; height:auto; display:block; }
+.receipt-item .del-img { position:absolute; top:8px; right:8px; background:#ef4444; color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; font-size:12px; box-shadow:0 2px 4px rgba(0,0,0,0.2); opacity:0; transition:0.2s; }
+.receipt-item:hover .del-img { opacity:1; }
 
 /* Folio input */
 .folio-row { display:flex; gap:0.5rem; margin-bottom:0.75rem; }
@@ -210,15 +216,20 @@
                 <div style="margin-bottom:0.75rem;">
                     @foreach($receipts as $f)
                         @php $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION)); $url = route('secure.download', ['file' => encrypt($f)]); @endphp
-                        @if(in_array($ext, ['jpg','jpeg','png','webp','gif']))
-                            <a href="{{ $url }}" target="_blank" style="display:block;margin-bottom:0.5rem;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;">
-                                <img src="{{ $url }}" alt="Comprobante" style="width:100%;height:auto;display:block;">
-                            </a>
-                        @else
-                            <a href="{{ $url }}" target="_blank" class="file-chip" style="display:flex;">
-                                📄 {{ basename($f) }}
-                            </a>
-                        @endif
+                        <div class="receipt-item">
+                            @if(in_array($ext, ['jpg','jpeg','png','webp','gif']))
+                                <a href="{{ $url }}" target="_blank">
+                                    <img src="{{ $url }}" alt="Comprobante">
+                                </a>
+                            @else
+                                <a href="{{ $url }}" target="_blank" class="file-chip" style="display:flex; justify-content: space-between; width: 100%;">
+                                    <span>📄 {{ basename($f) }}</span>
+                                </a>
+                            @endif
+                            @if(auth()->user()->hasPermission('payments.edit'))
+                                <button type="button" class="del-img" onclick="deleteDoc('{{ encrypt($f) }}', 'receipt')" title="Eliminar este archivo">✕</button>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             @else
@@ -270,9 +281,14 @@
                 <div style="margin-bottom:0.5rem;">
                     <div class="info-label" style="margin-bottom:0.3rem;">PDFs</div>
                     @foreach($invoicePdfs as $f)
-                        <a href="{{ route('secure.download', ['file' => encrypt($f)]) }}" target="_blank" class="file-chip">
-                            📄 {{ basename($f) }}
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;" class="file-chip">
+                            <a href="{{ route('secure.download', ['file' => encrypt($f)]) }}" target="_blank" style="text-decoration:none; color:inherit; flex:1;">
+                                📄 {{ basename($f) }}
+                            </a>
+                            @if(auth()->user()->hasPermission('payments.edit'))
+                                <span class="delete-btn" onclick="deleteDoc('{{ encrypt($f) }}', 'invoice_pdf')" title="Eliminar">✕</span>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             @endif
@@ -282,9 +298,14 @@
                 <div style="margin-bottom:0.75rem;">
                     <div class="info-label" style="margin-bottom:0.3rem;">XMLs CFDI</div>
                     @foreach($invoiceXmls as $f)
-                        <a href="{{ route('secure.download', ['file' => encrypt($f)]) }}" target="_blank" class="file-chip">
-                            🧩 {{ basename($f) }}
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;" class="file-chip">
+                            <a href="{{ route('secure.download', ['file' => encrypt($f)]) }}" target="_blank" style="text-decoration:none; color:inherit; flex:1;">
+                                🧩 {{ basename($f) }}
+                            </a>
+                            @if(auth()->user()->hasPermission('payments.edit'))
+                                <span class="delete-btn" onclick="deleteDoc('{{ encrypt($f) }}', 'invoice_xml')" title="Eliminar">✕</span>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             @endif
@@ -409,5 +430,30 @@ document.addEventListener('DOMContentLoaded', () => {
     ajaxForm('form-receipt');
     ajaxForm('form-invoice');
 });
+
+async function deleteDoc(path, field) {
+    if (!confirm('¿Seguro que deseas eliminar este documento permanentemente?')) return;
+    
+    try {
+        const res = await fetch('{{ route("payments.deleteDocument", $payment) }}', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ path, field })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error al eliminar.');
+        }
+    } catch (e) {
+        alert('Error de conexión.');
+    }
+}
 </script>
 @endpush

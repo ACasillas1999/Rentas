@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.markPaid');
     Route::post('/payments/{payment}/upload-invoice', [PaymentController::class, 'uploadInvoice'])->name('payments.uploadInvoice');
     Route::post('/payments/{payment}/upload-receipt', [PaymentController::class, 'uploadReceipt'])->name('payments.uploadReceipt');
+    Route::delete('/payments/{payment}/document', [PaymentController::class, 'deleteDocument'])->name('payments.deleteDocument');
 
     Route::get('/reports/income', [ReportController::class, 'income'])->name('reports.income');
     Route::get('/reports/income/export', [ReportController::class, 'exportIncome'])->name('reports.income.export');

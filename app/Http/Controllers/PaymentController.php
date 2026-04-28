@@ -324,6 +324,43 @@ class PaymentController extends Controller
         return redirect()->route('leases.show', $lease)->with('success', 'Pagos actualizados masivamente.');
     }
 
+    public function deleteDocument(Request $request, Payment $payment)
+    {
+        $this->authorizePermission('payments.edit');
+
+        $request->validate([
+            'path' => 'required|string',
+            'field' => 'required|in:receipt,invoice_pdf,invoice_xml'
+        ]);
+
+        try {
+            $path = decrypt($request->input('path'));
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Ruta no válida.'], 403);
+        }
+
+        $field = $request->input('field');
+        $current = $payment->$field ?: [];
+        if (! is_array($current)) {
+            $current = [$current];
+        }
+
+        if (($key = array_search($path, $current)) !== false) {
+            unset($current[$key]);
+            $payment->update([$field => array_values($current)]);
+
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+            }
+
+            $this->logActivity('deleted_document', 'payment', $payment->id, "Eliminó un documento ({$field}) del pago #{$payment->id}");
+
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Archivo no encontrado en el registro.'], 404);
+    }
+
     private function validatePayment(Request $request): array
     {
         return $request->validate([
@@ -340,6 +377,8 @@ class PaymentController extends Controller
             'status'         => ['required', 'in:pending,invoiced,paid,overdue,partial'],
             'payment_method' => ['nullable', 'string', 'max:40'],
             'reference' => ['nullable', 'string', 'max:80'],
+            'invoice_folio' => ['nullable', 'string', 'max:80'],
+            'invoiced_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
         ]);
     }
@@ -365,6 +404,13 @@ class PaymentController extends Controller
                 $data['paid_amount'] = (float) $data['amount'] + (float) ($data['late_fee'] ?? 0);
             }
             return $data;
+        }
+
+        // Si tiene folio o fecha de factura, marcar como facturado si estaba pendiente
+        if (! empty($data['invoice_folio']) || ! empty($data['invoiced_at'])) {
+            if ($data['status'] === 'pending') {
+                $data['status'] = 'invoiced';
+            }
         }
 
         // Si ya tiene fecha de pago o status paid, no tocar

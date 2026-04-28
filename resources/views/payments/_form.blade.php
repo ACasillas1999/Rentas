@@ -57,11 +57,24 @@
     </div>
     <div>
         <label for="payment_method">Método Pago</label>
-        <input id="payment_method" name="payment_method" value="{{ old('payment_method', $payment->payment_method ?? '') }}">
+        <select id="payment_method" name="payment_method">
+            <option value="">Seleccionar</option>
+            @foreach(['Transferencia', 'Efectivo', 'Cheque', 'Depósito', 'Tarjeta'] as $method)
+                <option value="{{ $method }}" @selected(old('payment_method', $payment->payment_method ?? '') === $method)>{{ $method }}</option>
+            @endforeach
+        </select>
     </div>
     <div>
         <label for="reference">Referencia</label>
         <input id="reference" name="reference" value="{{ old('reference', $payment->reference ?? '') }}">
+    </div>
+    <div>
+        <label for="invoice_folio">Folio de Factura</label>
+        <input id="invoice_folio" name="invoice_folio" value="{{ old('invoice_folio', $payment->invoice_folio ?? '') }}">
+    </div>
+    <div>
+        <label for="invoiced_at">Fecha de Facturación</label>
+        <input id="invoiced_at" name="invoiced_at" type="date" value="{{ old('invoiced_at', isset($payment) && $payment->invoiced_at ? $payment->invoiced_at->format('Y-m-d') : '') }}">
     </div>
     <div class="field-span-full">
         <label for="notes">Notas</label>
