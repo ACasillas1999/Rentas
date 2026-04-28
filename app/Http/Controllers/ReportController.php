@@ -8,13 +8,14 @@ use App\Models\Property;
 use App\Models\Unit;
 use App\Models\Lease;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function income(Request $request)
     {
@@ -255,6 +256,9 @@ class ReportController extends Controller
             ->selectRaw('MIN(YEAR(due_date)) as min_year')
             ->value('min_year') ?? $now->year;
 
+        $monthName = \Carbon\Carbon::create($year, $month, 1)->translatedFormat('F Y');
+        $this->logActivity('viewed', 'report', null, "Consultó reporte de ingresos: {$monthName} (modo: {$mode})");
+
         return view('reports.income', compact(
             'month', 'year', 'mode', 'status', 'payments',
             'totalPaid', 'totalPending', 'totalDeposits', 'depositLeases',
@@ -356,6 +360,9 @@ class ReportController extends Controller
             fclose($file);
         };
 
+        $monthName = str_pad($month, 2, '0', STR_PAD_LEFT);
+        $this->logActivity('exported', 'report', null, "Exportó CSV de ingresos: {$year}-{$monthName} (modo: {$mode})");
+
         return response()->stream($callback, 200, $headers);
     }
     public function matrix(Request $request)
@@ -454,6 +461,8 @@ class ReportController extends Controller
                 ->header('Content-Type', 'application/vnd.ms-excel')
                 ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
         }
+
+        $this->logActivity('viewed', 'report', null, "Consultó matriz de pagos: {$year}");
 
         return view('reports.matrix', compact('year', 'month', 'mode', 'propertyId', 'dateFilter', 'units', 'periods', 'matrix', 'properties', 'isExport'));
     }

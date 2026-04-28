@@ -153,7 +153,7 @@
 
 
     {{-- Calendario --}}
-    <div class="dash-card" style="margin-bottom:2rem;">
+    <div class="dash-card" style="margin-bottom:2rem; overflow:visible; z-index:10;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.5rem;">
             <h3 style="margin:0;color:#1e293b;">📅 Agenda de Cobranza</h3>
             <div class="legend-container" style="display:flex;gap:1.2rem;flex-wrap:wrap;font-size:0.85rem;align-items:center;font-weight:600;color:#64748b;">

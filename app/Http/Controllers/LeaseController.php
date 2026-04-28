@@ -8,6 +8,7 @@ use App\Models\Property;
 use App\Models\Tenant;
 use App\Models\Unit;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 class LeaseController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function index(Request $request)
     {
@@ -121,6 +122,8 @@ class LeaseController extends Controller
             $generated = $this->generatePeriodPayments($lease, $request->boolean('mark_past_as_paid'));
         }
 
+        $this->logActivity('created', 'lease', $lease->id, "Creó contrato #{$lease->contract_number} para {$lease->tenant?->full_name} — Unidad {$lease->unit?->code}");
+
         $message = 'Contrato creado.';
         if ($generated > 0) {
             $message .= " Se generaron {$generated} pagos por periodo automáticamente.";
@@ -137,6 +140,8 @@ class LeaseController extends Controller
         $lease->load(['unit.property', 'tenant', 'payments' => function ($q) {
             $q->orderBy('period_number')->orderBy('type');
         }]);
+
+        $this->logActivity('viewed', 'lease', $lease->id, "Consultó contrato #{$lease->contract_number} — {$lease->tenant?->full_name}");
 
         return view('leases.show', compact('lease'));
     }
@@ -176,6 +181,8 @@ class LeaseController extends Controller
 
         $lease->update($data);
         $lease->refresh();
+
+        $this->logActivity('updated', 'lease', $lease->id, "Editó contrato #{$lease->contract_number} — {$lease->tenant?->full_name}");
 
         // Sincronizar montos de pagos futuros pendientes
         $this->syncFuturePayments($lease);
@@ -273,6 +280,8 @@ class LeaseController extends Controller
                 $generated = $this->generatePeriodPayments($newLease, $request->boolean('mark_past_as_paid'));
             }
 
+            $this->logActivity('renewed', 'lease', $newLease->id, "Renovó contrato #{$lease->contract_number} → nuevo #{$newLease->contract_number} — {$newLease->tenant?->full_name}");
+
             return redirect()->route('leases.show', $newLease)->with('success', "Contrato renovado con éxito. Se generaron {$generated} nuevos pagos.");
         });
     }
@@ -282,11 +291,16 @@ class LeaseController extends Controller
         $this->authorizePermission('leases.delete');
         $this->authorizeProperty($lease->unit->property_id);
 
+        $desc = "Eliminó contrato #{$lease->contract_number} — {$lease->tenant?->full_name}";
+        $leaseId = $lease->id;
+
         $unit = $lease->unit;
         // Eliminar pagos asociados primero para evitar registros huérfanos
         $lease->payments()->delete();
         $lease->delete();
         $this->syncUnitStatus($unit);
+
+        $this->logActivity('deleted', 'lease', $leaseId, $desc);
 
         return redirect()->route('leases.index')->with('success', 'Contrato y sus pagos eliminados.');
     }

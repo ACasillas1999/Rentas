@@ -6,12 +6,13 @@ use App\Models\Expense;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ExpenseController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function index(Request $request)
     {
@@ -84,6 +85,8 @@ class ExpenseController extends Controller
 
         Expense::create($data);
 
+        $this->logActivity('created', 'expense', null, "Creó gasto: {$data['description']} (\${$data['amount']})");
+
         return redirect()->route('expenses.index')->with('success', 'Gasto registrado correctamente.');
     }
 
@@ -136,6 +139,8 @@ class ExpenseController extends Controller
 
         $expense->update($data);
 
+        $this->logActivity('updated', 'expense', $expense->id, "Editó gasto: {$expense->description} (\${$expense->amount})");
+
         return redirect()->route('expenses.index')->with('success', 'Gasto actualizado correctamente.');
     }
 
@@ -144,11 +149,16 @@ class ExpenseController extends Controller
         $this->authorizePermission('expenses.delete');
         $this->authorizeProperty($expense->property_id);
 
+        $desc = $expense->description;
+        $id = $expense->id;
         if ($expense->receipt) {
             Storage::delete($expense->receipt);
             Storage::disk('public')->delete($expense->receipt);
         }
         $expense->delete();
+
+        $this->logActivity('deleted', 'expense', $id, "Eliminó gasto: {$desc}");
+
         return redirect()->route('expenses.index')->with('success', 'Gasto eliminado.');
     }
 

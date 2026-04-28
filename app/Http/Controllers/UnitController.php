@@ -6,12 +6,13 @@ use App\Models\Property;
 use App\Models\Unit;
 use App\Models\User;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class UnitController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function index(Request $request)
     {
@@ -119,6 +120,8 @@ class UnitController extends Controller
 
         Unit::create($data);
 
+        $this->logActivity('created', 'unit', null, "Creó unidad: {$data['code']}");
+
         return redirect()->route('units.index')->with('success', 'Local/unidad creada.');
     }
 
@@ -175,6 +178,8 @@ class UnitController extends Controller
 
         $unit->update($data);
 
+        $this->logActivity('updated', 'unit', $unit->id, "Editó unidad: {$unit->code}");
+
         return redirect()->route('units.index')->with('success', 'Local/unidad actualizada.');
     }
 
@@ -183,7 +188,11 @@ class UnitController extends Controller
         $this->authorizePermission('units.delete');
         $this->authorizeProperty($unit->property_id);
 
+        $code = $unit->code;
+        $id = $unit->id;
         $unit->delete();
+
+        $this->logActivity('deleted', 'unit', $id, "Eliminó unidad: {$code}");
 
         return redirect()->route('units.index')->with('success', 'Local/unidad eliminada.');
     }

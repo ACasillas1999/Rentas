@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\User;
 use App\Models\UserPermission;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    use LogsActivity;
     public function index()
     {
         // Solo admins pueden gestionar usuarios
@@ -74,6 +76,8 @@ class UserController extends Controller
         if ($request->filled('allowed_properties')) {
             $user->allowedProperties()->sync($request->allowed_properties);
         }
+
+        $this->logActivity('created', 'user', $user->id, "Creó usuario: {$user->name} ({$user->email}) — Rol: {$user->role}");
 
         return redirect()->route('users.index')->with('success', 'Usuario creado correctamente.');
     }
@@ -140,6 +144,8 @@ class UserController extends Controller
         // Actualizar restricción de propiedades
         $user->allowedProperties()->sync($request->allowed_properties ?? []);
 
+        $this->logActivity('updated', 'user', $user->id, "Editó usuario: {$user->name} ({$user->email}) — Rol: {$user->role}");
+
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
@@ -153,7 +159,11 @@ class UserController extends Controller
             return redirect()->route('users.index')->with('error', 'No puedes eliminarte a ti mismo.');
         }
 
+        $name = $user->name;
+        $id = $user->id;
         $user->delete();
+
+        $this->logActivity('deleted', 'user', $id, "Eliminó usuario: {$name}");
 
         return redirect()->route('users.index')->with('success', 'Usuario eliminado.');
     }

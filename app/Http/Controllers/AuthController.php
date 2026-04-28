@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    use LogsActivity;
     public function showLogin()
     {
         if (Auth::check()) {
@@ -27,6 +29,9 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
+
+            $user = Auth::user();
+            $this->logActivity('login', 'auth', $user->id, "Inició sesión: {$user->name} ({$user->email})");
 
             return redirect()->intended(route('dashboard'));
         }

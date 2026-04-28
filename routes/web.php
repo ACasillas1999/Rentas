@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeaseController;
@@ -61,4 +62,7 @@ Route::middleware('auth')->group(function () {
 
     // Descargas Seguras
     Route::get('/download', [DownloadController::class, 'download'])->name('secure.download');
+
+    // Bitácora de Actividad (solo admin)
+    Route::get('/activity', [ActivityLogController::class, 'index'])->name('activity.index');
 });

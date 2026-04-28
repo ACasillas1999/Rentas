@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Property;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function index(Request $request)
     {
@@ -117,6 +118,8 @@ class PropertyController extends Controller
 
         Property::create($data);
 
+        $this->logActivity('created', 'property', null, "Creó propiedad: {$data['name']}");
+
         return redirect()->route('properties.index')->with('success', 'Propiedad creada.');
     }
 
@@ -161,6 +164,8 @@ class PropertyController extends Controller
 
         $property->update($data);
 
+        $this->logActivity('updated', 'property', $property->id, "Editó propiedad: {$property->name}");
+
         return redirect()->route('properties.index')->with('success', 'Propiedad actualizada.');
     }
 
@@ -169,7 +174,11 @@ class PropertyController extends Controller
         $this->authorizePermission('properties.delete');
         $this->authorizeProperty($property->id);
 
+        $name = $property->name;
+        $id = $property->id;
         $property->delete();
+
+        $this->logActivity('deleted', 'property', $id, "Eliminó propiedad: {$name}");
 
         return redirect()->route('properties.index')->with('success', 'Propiedad eliminada.');
     }

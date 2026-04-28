@@ -6,13 +6,14 @@ use App\Models\Lease;
 use App\Models\Payment;
 use App\Models\Tenant;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function index(Request $request)
     {
@@ -87,7 +88,10 @@ class PaymentController extends Controller
         $data = $this->validatePayment($request);
         $data = $this->normalizePaymentFields($data);
 
-        Payment::create($data);
+        $payment = Payment::create($data);
+
+        $tenant = $payment->lease?->tenant?->full_name ?? '-';
+        $this->logActivity('created', 'payment', $payment->id, "Creó pago #{$payment->id} ({$payment->period_label}) — {$tenant}");
 
         return redirect()->route('payments.index')->with('success', 'Pago registrado.');
     }
@@ -97,6 +101,9 @@ class PaymentController extends Controller
         $this->authorizePermission('payments.view');
 
         $payment->load('lease.unit.property', 'lease.tenant');
+
+        $tenant = $payment->lease?->tenant?->full_name ?? '-';
+        $this->logActivity('viewed', 'payment', $payment->id, "Consultó pago #{$payment->id} ({$payment->period_label}) — {$tenant}");
 
         // Todos los pagos del mismo contrato para el navegador de periodos
         $siblingPayments = Payment::where('lease_id', $payment->lease_id)
@@ -124,12 +131,19 @@ class PaymentController extends Controller
 
         $payment->update($data);
 
+        $tenant = $payment->lease?->tenant?->full_name ?? '-';
+        $this->logActivity('updated', 'payment', $payment->id, "Editó pago #{$payment->id} ({$payment->period_label}) — {$tenant}");
+
         return redirect()->route('payments.index')->with('success', 'Pago actualizado.');
     }
 
     public function destroy(Payment $payment)
     {
         $this->authorizePermission('payments.delete');
+
+        $tenant = $payment->lease?->tenant?->full_name ?? '-';
+        $desc = "Eliminó pago #{$payment->id} ({$payment->period_label}) — {$tenant}";
+        $this->logActivity('deleted', 'payment', $payment->id, $desc);
 
         $payment->delete();
 
@@ -163,6 +177,12 @@ class PaymentController extends Controller
     }
 
     $payment->update($data);
+
+    $tenant = $payment->lease?->tenant?->full_name ?? '-';
+    $action = $data['status'] === 'partial' ? 'paid' : 'paid';
+    $this->logActivity('paid', 'payment', $payment->id,
+        "Registró cobro de pago #{$payment->id} ({$payment->period_label}) — \${$paidAmount} — {$tenant}"
+    );
 
     $msg = $data['status'] === 'partial'
         ? 'Pago parcial registrado ($' . number_format($paidAmount, 2) . ' de $' . number_format($expected, 2) . ').'
@@ -221,6 +241,10 @@ class PaymentController extends Controller
 
         $payment->update($updateData);
 
+        $folio = $payment->invoice_folio ?? 'sin folio';
+        $tenant = $payment->lease?->tenant?->full_name ?? '-';
+        $this->logActivity('invoiced', 'payment', $payment->id, "Subió factura ({$folio}) para pago #{$payment->id} — {$tenant}");
+
         return response()->json(['success' => true, 'message' => 'Factura guardada.']);
     }
 
@@ -249,6 +273,9 @@ class PaymentController extends Controller
             'paid_at'     => $request->filled('paid_at') ? $request->input('paid_at') : ($payment->paid_at?->toDateString() ?? now()->toDateString()),
             'paid_amount' => $request->filled('paid_amount') ? $request->input('paid_amount') : ($payment->paid_amount ?? ((float)$payment->amount + (float)($payment->late_fee ?? 0))),
         ]);
+
+        $tenant = $payment->lease?->tenant?->full_name ?? '-';
+        $this->logActivity('receipt', 'payment', $payment->id, "Subió comprobante de pago #{$payment->id} — {$tenant}");
 
         return response()->json([
             'success' => true,
@@ -291,6 +318,8 @@ class PaymentController extends Controller
                 ]);
             }
         }
+
+        $this->logActivity('bulk', 'payment', $lease->id, "Edición masiva de pagos del contrato #{$lease->contract_number} ({$count} pagos)");
 
         return redirect()->route('leases.show', $lease)->with('success', 'Pagos actualizados masivamente.');
     }

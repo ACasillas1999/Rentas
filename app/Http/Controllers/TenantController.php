@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Tenant;
 use App\Traits\FiltersByUserAccess;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 
 class TenantController extends Controller
 {
-    use FiltersByUserAccess;
+    use FiltersByUserAccess, LogsActivity;
 
     public function index(Request $request)
     {
@@ -89,6 +90,8 @@ class TenantController extends Controller
 
         Tenant::create($data);
 
+        $this->logActivity('created', 'tenant', null, "Creó inquilino: {$data['full_name']}");
+
         return redirect()->route('tenants.index')->with('success', 'Inquilino registrado.');
     }
 
@@ -103,6 +106,8 @@ class TenantController extends Controller
             },
             'leases.payments.lease.unit'
         ]);
+
+        $this->logActivity('viewed', 'tenant', $tenant->id, "Consultó ficha de inquilino: {$tenant->full_name}");
 
         return view('tenants.show', compact('tenant'));
     }
@@ -134,6 +139,8 @@ class TenantController extends Controller
 
         $tenant->update($data);
 
+        $this->logActivity('updated', 'tenant', $tenant->id, "Editó inquilino: {$tenant->full_name}");
+
         return redirect()->route('tenants.index')->with('success', 'Inquilino actualizado.');
     }
 
@@ -141,7 +148,11 @@ class TenantController extends Controller
     {
         $this->authorizePermission('tenants.delete');
 
+        $name = $tenant->full_name;
+        $id = $tenant->id;
         $tenant->delete();
+
+        $this->logActivity('deleted', 'tenant', $id, "Eliminó inquilino: {$name}");
 
         return redirect()->route('tenants.index')->with('success', 'Inquilino eliminado.');
     }
