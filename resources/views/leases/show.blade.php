@@ -85,7 +85,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
                 <h3 style="margin: 0; color: #153464;">Documento del Contrato</h3>
                 @if($lease->contract_pdf)
-                    <a href="{{ route('secure.download', ['file' => encrypt($lease->contract_pdf)]) }}" target="_blank" class="btn btn-primary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
+                    <a href="{{ route('secure.download', ['file' => encrypt($lease->contract_pdf), 'mode' => 'download']) }}" target="_blank" class="btn btn-primary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">
                         <span style="display: flex; align-items: center; gap: 0.4rem;">
                             <svg viewBox="0 0 24 24" width="16" height="16" style="stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>

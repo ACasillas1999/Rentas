@@ -30,19 +30,27 @@ class DownloadController extends Controller
             abort(403, 'Enlace no válido o corrupto.');
         }
 
+        $mode = $request->query('mode', 'view');
+
         // 1. Buscar en disco 'local' (storage/app/private)
         if (Storage::disk('local')->exists($path)) {
-            return Storage::disk('local')->download($path);
+            return $mode === 'download' 
+                ? Storage::disk('local')->download($path)
+                : Storage::disk('local')->response($path);
         }
 
         // 2. Buscar en disco 'public' (storage/app/public)
         if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->download($path);
+            return $mode === 'download' 
+                ? Storage::disk('public')->download($path)
+                : Storage::disk('public')->response($path);
         }
 
         // 3. Buscar en el storage raíz por si acaso
         if (Storage::exists($path)) {
-            return Storage::download($path);
+            return $mode === 'download' 
+                ? Storage::download($path)
+                : Storage::response($path);
         }
 
         abort(404, "El archivo no se encuentra físicamente en el servidor. (Ruta: $path)");
