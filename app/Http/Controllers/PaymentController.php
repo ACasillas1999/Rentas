@@ -323,6 +323,7 @@ class PaymentController extends Controller
             }
         }
 
+        $count = count($request->input('payments'));
         $this->logActivity('bulk', 'payment', $lease->id, "Edición masiva de pagos del contrato #{$lease->contract_number} ({$count} pagos)");
 
         return redirect()->route('leases.show', $lease)->with('success', 'Pagos actualizados masivamente.');
