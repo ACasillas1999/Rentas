@@ -231,8 +231,11 @@ class PaymentController extends Controller
             $updateData['invoice_xml'] = $current;
         }
 
-        if (count($updateData) <= 1 && !$request->hasFile('invoice_pdf') && !$request->hasFile('invoice_xml') && !$request->filled('invoice_folio')) {
-            return response()->json(['success' => false, 'message' => 'No se envió ningún dato.'], 422);
+        $hasFiles = $request->hasFile('invoice_pdf') || $request->hasFile('invoice_xml');
+        $hasData  = $request->filled('invoice_folio') || $request->filled('invoiced_at');
+
+        if (! $hasFiles && ! $hasData) {
+            return response()->json(['success' => false, 'message' => 'No se envió ningún dato nuevo.'], 422);
         }
 
         if (in_array($payment->status, ['pending', 'overdue'])) {
