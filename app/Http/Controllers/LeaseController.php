@@ -324,6 +324,7 @@ class LeaseController extends Controller
             'deposit_amount'      => ['nullable', 'numeric', 'min:0'],
             'status'              => ['required', 'in:active,finished,cancelled'],
             'notes'               => ['nullable', 'string'],
+            'contract_pdf'        => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
     }
 
