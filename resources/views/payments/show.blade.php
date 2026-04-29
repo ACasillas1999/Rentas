@@ -51,7 +51,7 @@
 
 {{-- Print header --}}
 <div class="print-header" style="display:none;margin-bottom:2rem;border-bottom:2px solid #000;padding-bottom:1rem;">
-    <div style="font-size:1.8rem;font-weight:800;">RentAscencio</div>
+    <img src="{{ asset('arrrendamientos.png') }}" alt="Logo" style="max-height: 80px; width: auto; margin-bottom: 0.5rem;">
     <div style="font-size:0.9rem;color:#555;">Recibo de Pago de Arrendamiento</div>
 </div>
 

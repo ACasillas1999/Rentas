@@ -28,5 +28,5 @@ Ir al Sistema
 </x-mail::button>
 
 Atentamente,  
-**Administración RentAscencio**
+**Grupo Ascencio — Arrendamientos**
 </x-mail::message>

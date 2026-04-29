@@ -8,6 +8,8 @@
     <meta name="view-transition" content="same-origin">
     
     <title>@yield('title', 'Sistema de Rentas')</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('arrrendamientos.png') }}">
     <style>
         :root {
             --bg: #f2f5fb;
@@ -62,18 +64,14 @@
         }
 
         .brand {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-bottom: 0.1rem;
-            letter-spacing: 0.4px;
+            margin-bottom: 0.8rem;
         }
 
-        .brand-subtitle {
-            margin: 0 0 1.2rem;
-            color: #9fb4ce;
-            font-size: 0.86rem;
-            line-height: 1.35;
+        .brand img {
+            max-width: 100%;
+            height: auto;
+            max-height: 50px;
+            display: block;
         }
 
         .sidebar-nav {
@@ -966,8 +964,9 @@
         <aside class="sidebar" id="appSidebar">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                 <div>
-                    <div class="brand">RentAscencio</div>
-                    <p class="brand-subtitle">Control de locales comerciales y propiedades.</p>
+                    <div class="brand">
+                        <img src="{{ asset('arrrendamientos.png') }}" alt="Logo">
+                    </div>
                 </div>
                 <button class="mobile-close-sidebar" id="closeSidebarBtn">&times;</button>
             </div>
