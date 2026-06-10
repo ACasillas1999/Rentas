@@ -195,7 +195,8 @@ class SendMonthlyReport extends Command
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Envío de WhatsApp via WABA (Meta Cloud API)
+    // Envío de WhatsApp via WABA (Meta Cloud API) — Plantilla HSM
+    // Plantilla: resumen_mensual_rentas  (Utility, Español MX)
     // ─────────────────────────────────────────────────────────────────────
     private function enviarWhatsApp(array $stats, string $periodLabel): void
     {
@@ -216,35 +217,38 @@ class SendMonthlyReport extends Command
             return;
         }
 
-        // Formatear el mensaje de texto del resumen
-        $emoji_tasa = $stats['tasaCobranza'] >= 80 ? '🟢' : ($stats['tasaCobranza'] >= 50 ? '🟡' : '🔴');
         $fmt = fn($n) => '$' . number_format($n, 2);
 
-        $mensaje = implode("\n", [
-            "📊 *Resumen Mensual — {$periodLabel}*",
-            "━━━━━━━━━━━━━━━━━━━━",
-            "",
-            "💰 *Cobranza*",
-            "  ✅ Pagados: {$stats['pagadosTotal']} ({$stats['pagadosATiempo']} a tiempo, {$stats['pagadosConRetraso']} con retraso)",
-            "  ⏳ Pendientes: {$stats['pendientesCount']}",
-            "  ❌ Vencidos: {$stats['vencidosCount']}",
-            "  📑 Facturados: {$stats['facturadosCount']}",
-            "  🔸 Parciales: {$stats['parcialesCount']}",
-            "",
-            "  💵 Cobrado: {$fmt($stats['totalCobrado'])}",
-            "  📋 Pendiente: {$fmt($stats['totalPendiente'])}",
-            "  {$emoji_tasa} Tasa cobranza: {$stats['tasaCobranza']}%",
-            "",
-            "🏠 *Ocupación*",
-            "  {$stats['unidadesOcupadas']} / {$stats['totalUnidades']} unidades ({$stats['tasaOcupacion']}%)",
-            "",
-            "📉 *Finanzas*",
-            "  Gastos: {$fmt($stats['totalGastos'])}",
-            "  Utilidad neta: {$fmt($stats['utilidadNeta'])}",
-            "",
-            "🔗 Ver reporte completo:",
-            env('APP_URL', '') . "/reports/income",
-        ]);
+        // ── Parámetros de la plantilla resumen_mensual_rentas ──
+        // {{1}} Período,  {{2}} Total pagados,  {{3}} A tiempo,  {{4}} Con retraso
+        // {{5}} Pendientes, {{6}} Vencidos,  {{7}} Cobrado,  {{8}} Tasa %
+        // {{9}} Unidades ocupadas, {{10}} Total unidades, {{11}} % Ocupación
+        // {{12}} Gastos, {{13}} Utilidad neta, {{14}} URL reporte
+        $parametros = [
+            $periodLabel,
+            (string) $stats['pagadosTotal'],
+            (string) $stats['pagadosATiempo'],
+            (string) $stats['pagadosConRetraso'],
+            (string) $stats['pendientesCount'],
+            (string) $stats['vencidosCount'],
+            $fmt($stats['totalCobrado']),
+            (string) $stats['tasaCobranza'],
+            (string) $stats['unidadesOcupadas'],
+            (string) $stats['totalUnidades'],
+            (string) $stats['tasaOcupacion'],
+            $fmt($stats['totalGastos']),
+            $fmt($stats['utilidadNeta']),
+            env('APP_URL', '') . '/reports/income',
+        ];
+
+        // Convertir a formato que espera la API de Meta
+        $components = [[
+            'type'       => 'body',
+            'parameters' => array_map(
+                fn($valor) => ['type' => 'text', 'text' => $valor],
+                $parametros
+            ),
+        ]];
 
         foreach ($numeros as $numero) {
             try {
@@ -253,8 +257,12 @@ class SendMonthlyReport extends Command
                 $body = [
                     'messaging_product' => 'whatsapp',
                     'to'                => $numero,
-                    'type'              => 'text',
-                    'text'              => ['body' => $mensaje, 'preview_url' => false],
+                    'type'              => 'template',
+                    'template'          => [
+                        'name'       => 'resumen_mensual_rentas',
+                        'language'   => ['code' => 'es_MX'],
+                        'components' => $components,
+                    ],
                 ];
 
                 $response = Http::withToken($wabaToken)
@@ -274,6 +282,7 @@ class SendMonthlyReport extends Command
             }
         }
     }
+
 
     // ─────────────────────────────────────────────────────────────────────
     // Dry-run: mostrar en consola
