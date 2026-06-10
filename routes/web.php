@@ -13,6 +13,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\LeaseNotificationController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\MonthlyReportController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas de autenticación (públicas)
@@ -54,6 +55,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/income', [ReportController::class, 'income'])->name('reports.income');
     Route::get('/reports/income/export', [ReportController::class, 'exportIncome'])->name('reports.income.export');
     Route::get('/reports/matrix', [ReportController::class, 'matrix'])->name('reports.matrix');
+
+    // Reporte Mensual Automático
+    Route::get('/reports/monthly',       [MonthlyReportController::class, 'index'])->name('reports.monthly.index');
+    Route::post('/reports/monthly/save', [MonthlyReportController::class, 'saveConfig'])->name('reports.monthly.save');
+    Route::post('/reports/monthly/send', [MonthlyReportController::class, 'sendNow'])->name('reports.monthly.send');
 
     // Módulo de Notificaciones
     Route::get('/notifications', [LeaseNotificationController::class, 'index'])->name('notifications.index');

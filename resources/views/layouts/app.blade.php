@@ -1115,6 +1115,24 @@
                             <span>Matriz de Pagos</span>
                         </a>
                         @endif
+                        @if(auth()->user()->hasPermission('reports.view'))
+                        <a class="nav-link {{ request()->routeIs('reports.monthly.*') ? 'active' : '' }}"
+                           href="{{ route('reports.monthly.index') }}">
+                            <span class="nav-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M4 4h16v16H4z"/>
+                                    <path d="M8 2v4"/>
+                                    <path d="M16 2v4"/>
+                                    <path d="M4 10h16"/>
+                                    <path d="M8 14h2"/>
+                                    <path d="M14 14h2"/>
+                                    <path d="M8 18h2"/>
+                                </svg>
+                            </span>
+                            <span>Resumen Mensual</span>
+                        </a>
+                        @endif
+
                         @if(auth()->user()->hasPermission('users.view'))
                         <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
                            href="{{ route('users.index') }}">
