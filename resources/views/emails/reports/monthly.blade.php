@@ -19,11 +19,11 @@
 
     <!-- ══════════ HEADER ══════════ -->
     <tr>
-      <td style="background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 50%,#06b6d4 100%);border-radius:20px 20px 0 0;padding:40px 32px 36px;text-align:center;">
+      <td bgcolor="#1e3a8a" style="background-color:#1e3a8a;background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 50%,#06b6d4 100%);border-radius:20px 20px 0 0;padding:40px 32px 36px;text-align:center;">
         <!-- Logo mark -->
         <div style="display:inline-block;width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:18px;line-height:64px;font-size:28px;margin-bottom:18px;border:2px solid rgba(255,255,255,0.3);">🏠</div>
         <br>
-        <span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.75);margin-bottom:8px;">Sistema de Arrendamientos · Grupo Ascencio</span>
+        <span style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#bfdbfe;margin-bottom:8px;">Sistema de Arrendamientos · Grupo Ascencio</span>
         <br>
         <span style="font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Resumen Mensual</span>
         <br>
@@ -45,7 +45,7 @@
             <td width="48%" style="padding-right:8px;padding-bottom:12px;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:16px;padding:20px;text-align:center;">
+                  <td bgcolor="#eff6ff" style="background-color:#eff6ff;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:16px;padding:20px;text-align:center;">
                     <div style="font-size:22px;margin-bottom:6px;">💵</div>
                     <div style="font-size:36px;font-weight:900;line-height:1;color:{{ $stats['tasaCobranza']>=80 ? '#16a34a' : ($stats['tasaCobranza']>=50 ? '#d97706' : '#dc2626') }};">
                       {{ $stats['tasaCobranza'] }}%
@@ -60,7 +60,7 @@
             <td width="48%" style="padding-left:8px;padding-bottom:12px;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:16px;padding:20px;text-align:center;">
+                  <td bgcolor="#f0fdf4" style="background-color:#f0fdf4;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:16px;padding:20px;text-align:center;">
                     <div style="font-size:22px;margin-bottom:6px;">🏠</div>
                     <div style="font-size:36px;font-weight:900;line-height:1;color:{{ $stats['tasaOcupacion']>=80 ? '#16a34a' : ($stats['tasaOcupacion']>=50 ? '#d97706' : '#dc2626') }};">
                       {{ $stats['tasaOcupacion'] }}%
@@ -77,7 +77,7 @@
             <td width="48%" style="padding-right:8px;padding-bottom:12px;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #ddd6fe;border-radius:16px;padding:20px;text-align:center;">
+                  <td bgcolor="#f5f3ff" style="background-color:#f5f3ff;background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #ddd6fe;border-radius:16px;padding:20px;text-align:center;">
                     <div style="font-size:22px;margin-bottom:6px;">✅</div>
                     <div style="font-size:36px;font-weight:900;line-height:1;color:#7c3aed;">{{ $stats['pagadosTotal'] }}</div>
                     <div style="font-size:12px;font-weight:700;color:#6d28d9;margin-top:5px;">Pagos Recibidos</div>
@@ -90,7 +90,7 @@
             <td width="48%" style="padding-left:8px;padding-bottom:12px;">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background:{{ $stats['vencidosCount']>0 ? 'linear-gradient(135deg,#fff1f2,#ffe4e6)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)' }};border:1px solid {{ $stats['vencidosCount']>0 ? '#fecdd3' : '#bbf7d0' }};border-radius:16px;padding:20px;text-align:center;">
+                  <td bgcolor="{{ $stats['vencidosCount']>0 ? '#fff1f2' : '#f0fdf4' }}" style="background-color:{{ $stats['vencidosCount']>0 ? '#fff1f2' : '#f0fdf4' }};background:{{ $stats['vencidosCount']>0 ? 'linear-gradient(135deg,#fff1f2,#ffe4e6)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)' }};border:1px solid {{ $stats['vencidosCount']>0 ? '#fecdd3' : '#bbf7d0' }};border-radius:16px;padding:20px;text-align:center;">
                     <div style="font-size:22px;margin-bottom:6px;">{{ $stats['vencidosCount']>0 ? '⚠️' : '🎉' }}</div>
                     <div style="font-size:36px;font-weight:900;line-height:1;color:{{ $stats['vencidosCount']>0 ? '#dc2626' : '#16a34a' }};">{{ $stats['vencidosCount'] }}</div>
                     <div style="font-size:12px;font-weight:700;color:{{ $stats['vencidosCount']>0 ? '#b91c1c' : '#15803d' }};margin-top:5px;">Pagos Vencidos</div>
@@ -121,8 +121,8 @@
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 16px;">
                 <tr>
                   <td style="background:#e2e8f0;border-radius:8px;height:12px;overflow:hidden;">
-                    <!--[if mso]><v:rect xmlns:v="urn:schemas-microsoft-com:vml" style="width:{{ min($stats['tasaCobranza'],100) }}%;height:12px;" fillcolor="{{ $stats['tasaCobranza']>=80 ? '#16a34a' : ($stats['tasaCobranza']>=50 ? '#d97706' : '#dc2626') }}" stroked="false"><v:fill type="solid"/></v:rect><![endif]-->
-                    <div style="background:{{ $stats['tasaCobranza']>=80 ? 'linear-gradient(90deg,#16a34a,#22c55e)' : ($stats['tasaCobranza']>=50 ? 'linear-gradient(90deg,#d97706,#f59e0b)' : 'linear-gradient(90deg,#dc2626,#f87171)') }};width:{{ min($stats['tasaCobranza'],100) }}%;height:12px;border-radius:8px;min-width:4px;"></div>
+                      <!--[if mso]><v:rect xmlns:v="urn:schemas-microsoft-com:vml" style="width:{{ min($stats['tasaCobranza'],100) }}%;height:12px;" fillcolor="{{ $stats['tasaCobranza']>=80 ? '#16a34a' : ($stats['tasaCobranza']>=50 ? '#d97706' : '#dc2626') }}" stroked="false"><v:fill type="solid"/></v:rect><![endif]-->
+                    <div style="background-color:{{ $stats['tasaCobranza']>=80 ? '#16a34a' : ($stats['tasaCobranza']>=50 ? '#d97706' : '#dc2626') }};background:{{ $stats['tasaCobranza']>=80 ? 'linear-gradient(90deg,#16a34a,#22c55e)' : ($stats['tasaCobranza']>=50 ? 'linear-gradient(90deg,#d97706,#f59e0b)' : 'linear-gradient(90deg,#dc2626,#f87171)') }};width:{{ min($stats['tasaCobranza'],100) }}%;height:12px;border-radius:8px;min-width:4px;"></div>
                   </td>
                 </tr>
               </table>
@@ -194,7 +194,7 @@
           @foreach($stats['porPropiedad'] as $nombre => $prop)
           <tr>
             <td style="padding:13px 16px;font-size:13px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9;">
-              <span style="display:inline-block;width:8px;height:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;margin-right:8px;vertical-align:middle;"></span>
+              <span style="display:inline-block;width:8px;height:8px;background-color:#3b82f6;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:50%;margin-right:8px;vertical-align:middle;"></span>
               {{ $nombre }}
               @if($prop['pendiente']>0)
               <br><span style="font-size:11px;font-weight:400;color:#ef4444;margin-left:16px;">↳ Pendiente: ${{ number_format($prop['pendiente'],2) }}</span>
@@ -245,7 +245,7 @@
     <tr>
       <td style="background:#ffffff;padding:0 32px 32px;text-align:center;">
         <a href="{{ $appUrl }}/reports/income?month={{ $month }}&year={{ $year }}"
-           style="display:inline-block;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:0.02em;box-shadow:0 4px 14px rgba(59,130,246,0.4);">
+           style="display:inline-block;background-color:#1e3a8a;background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:0.02em;box-shadow:0 4px 14px rgba(59,130,246,0.4);">
           📊 Ver Reporte Completo →
         </a>
         <p style="margin:12px 0 0;font-size:12px;color:#94a3b8;">
