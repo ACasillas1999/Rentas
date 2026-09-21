@@ -1115,7 +1115,7 @@
                             <span>Matriz de Pagos</span>
                         </a>
                         @endif
-                        @if(auth()->user()->hasPermission('reports.view'))
+                        @if(!auth()->user()->isViewer() && auth()->user()->hasPermission('reports.view'))
                         <a class="nav-link {{ request()->routeIs('reports.monthly.*') ? 'active' : '' }}"
                            href="{{ route('reports.monthly.index') }}">
                             <span class="nav-icon" aria-hidden="true">

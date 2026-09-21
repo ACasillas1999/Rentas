@@ -23,6 +23,10 @@ class MonthlyReportController extends Controller
     {
         $this->authorizePermission('reports.view');
 
+        if (auth()->user()->isViewer()) {
+            abort(403, 'No tienes permiso para acceder al resumen mensual.');
+        }
+
         $now   = Carbon::now();
         $month = (int) $request->get('month', $now->copy()->subMonthNoOverflow()->month);
         $year  = (int) $request->get('year',  $now->copy()->subMonthNoOverflow()->year);
@@ -42,9 +46,8 @@ class MonthlyReportController extends Controller
         ];
 
         // Años disponibles
-        $firstYear = Payment::whereNotNull('due_date')
-            ->selectRaw('MIN(YEAR(due_date)) as min_year')
-            ->value('min_year') ?? $now->year;
+        $minDueDate = Payment::whereNotNull('due_date')->min('due_date');
+        $firstYear  = $minDueDate ? (int) Carbon::parse($minDueDate)->year : $now->year;
 
         return view('reports.monthly_config', compact(
             'stats', 'periodLabel', 'month', 'year', 'config', 'firstYear'
@@ -57,6 +60,10 @@ class MonthlyReportController extends Controller
     public function saveConfig(Request $request)
     {
         $this->authorizePermission('reports.view');
+
+        if (auth()->user()->isViewer()) {
+            abort(403, 'No tienes permiso para modificar la configuración.');
+        }
 
         $email    = trim($request->input('report_email', ''));
         $whatsapp = trim($request->input('report_whatsapp', ''));
@@ -78,6 +85,10 @@ class MonthlyReportController extends Controller
     public function sendNow(Request $request)
     {
         $this->authorizePermission('reports.view');
+
+        if (auth()->user()->isViewer()) {
+            abort(403, 'No tienes permiso para enviar reportes.');
+        }
 
         $month = (int) $request->input('month', Carbon::now()->subMonthNoOverflow()->month);
         $year  = (int) $request->input('year',  Carbon::now()->subMonthNoOverflow()->year);
@@ -108,13 +119,19 @@ class MonthlyReportController extends Controller
      */
     public function calcularStats(int $month, int $year): array
     {
-        $filterDate = Carbon::create($year, $month, 1);
+        $filterDate  = Carbon::create($year, $month, 1);
+        $propertyIds = auth()->user()->allowedPropertyIds();
 
-        $payments = Payment::with(['lease.unit.property', 'lease.tenant'])
+        $paymentsQuery = Payment::with(['lease.unit.property', 'lease.tenant'])
             ->whereNotNull('due_date')
             ->whereYear('due_date', $year)
-            ->whereMonth('due_date', $month)
-            ->get();
+            ->whereMonth('due_date', $month);
+
+        if ($propertyIds !== null) {
+            $paymentsQuery->whereHas('lease.unit', fn ($q) => $q->whereIn('property_id', $propertyIds));
+        }
+
+        $payments = $paymentsQuery->get();
 
         $pagadosTotal    = $payments->where('status', 'paid')->count();
         $facturadosCount = $payments->where('status', 'invoiced')->count();
@@ -141,17 +158,30 @@ class MonthlyReportController extends Controller
             ? round(($totalCobrado / ($totalCobrado + $totalPendiente)) * 100, 1)
             : 0;
 
-        $gastos      = Expense::whereYear('expense_date', $year)->whereMonth('expense_date', $month)->get();
+        $gastosQuery = Expense::whereYear('expense_date', $year)->whereMonth('expense_date', $month);
+        if ($propertyIds !== null) {
+            $gastosQuery->whereIn('property_id', $propertyIds);
+        }
+        $gastos      = $gastosQuery->get();
         $totalGastos = (float) $gastos->sum('amount');
         $utilidadNeta = $totalCobrado - $totalGastos;
 
-        $totalUnidades  = Unit::count();
-        $unidadesOcupadas = Lease::where(function ($q) use ($filterDate) {
+        $totalUnidadesQuery = Unit::query();
+        if ($propertyIds !== null) {
+            $totalUnidadesQuery->whereIn('property_id', $propertyIds);
+        }
+        $totalUnidades  = $totalUnidadesQuery->count();
+
+        $unidadesOcupadasQuery = Lease::where(function ($q) use ($filterDate) {
             $q->where('start_date', '<=', $filterDate->copy()->endOfMonth())
               ->where(fn($sq) => $sq->whereNull('end_date')
                   ->orWhere('end_date', '>=', $filterDate->copy()->startOfMonth()))
               ->where('status', 'active');
-        })->distinct('unit_id')->count('unit_id');
+        });
+        if ($propertyIds !== null) {
+            $unidadesOcupadasQuery->whereHas('unit', fn($q) => $q->whereIn('property_id', $propertyIds));
+        }
+        $unidadesOcupadas = $unidadesOcupadasQuery->distinct('unit_id')->count('unit_id');
 
         $tasaOcupacion = $totalUnidades > 0
             ? round(($unidadesOcupadas / $totalUnidades) * 100)

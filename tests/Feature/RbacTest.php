@@ -209,4 +209,34 @@ class RbacTest extends TestCase
             ->get(route('properties.show', $allowedProperty))
             ->assertStatus(200);
     }
+
+    // ── Resumen Mensual ───────────────────────────────────────────
+
+    public function test_viewer_cannot_access_monthly_report(): void
+    {
+        $this->actingAs($this->viewer())
+            ->get(route('reports.monthly.index'))
+            ->assertStatus(403);
+    }
+
+    public function test_viewer_cannot_save_monthly_report_config(): void
+    {
+        $this->actingAs($this->viewer())
+            ->post(route('reports.monthly.save'), ['report_email' => 'test@test.com'])
+            ->assertStatus(403);
+    }
+
+    public function test_viewer_cannot_send_monthly_report(): void
+    {
+        $this->actingAs($this->viewer())
+            ->post(route('reports.monthly.send'), ['month' => 5, 'year' => 2026])
+            ->assertStatus(403);
+    }
+
+    public function test_manager_can_access_monthly_report(): void
+    {
+        $this->actingAs($this->manager())
+            ->get(route('reports.monthly.index'))
+            ->assertStatus(200);
+    }
 }

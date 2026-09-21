@@ -252,9 +252,8 @@ class ReportController extends Controller
             ->sortByDesc(fn($v) => $v);
 
         // Año mínimo con pagos
-        $firstYear = Payment::whereNotNull('due_date')
-            ->selectRaw('MIN(YEAR(due_date)) as min_year')
-            ->value('min_year') ?? $now->year;
+        $minDueDate = Payment::whereNotNull('due_date')->min('due_date');
+        $firstYear  = $minDueDate ? (int) Carbon::parse($minDueDate)->year : $now->year;
 
         $monthName = \Carbon\Carbon::create($year, $month, 1)->translatedFormat('F Y');
         $this->logActivity('viewed', 'report', null, "Consultó reporte de ingresos: {$monthName} (modo: {$mode})");
