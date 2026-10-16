@@ -31,8 +31,9 @@ class MonthlyReportController extends Controller
         $month = (int) $request->get('month', $now->copy()->subMonthNoOverflow()->month);
         $year  = (int) $request->get('year',  $now->copy()->subMonthNoOverflow()->year);
 
-        // Calcular stats para la vista previa
+        // Calcular stats y matriz para la vista previa
         $stats = $this->calcularStats($month, $year);
+        $matrixData = self::obtenerMatrizMensual($month, $year, auth()->user()->allowedPropertyIds());
 
         $periodLabel = ucfirst(Carbon::create($year, $month, 1)
             ->locale('es')->isoFormat('MMMM YYYY'));
@@ -50,8 +51,156 @@ class MonthlyReportController extends Controller
         $firstYear  = $minDueDate ? (int) Carbon::parse($minDueDate)->year : $now->year;
 
         return view('reports.monthly_config', compact(
-            'stats', 'periodLabel', 'month', 'year', 'config', 'firstYear'
+            'stats', 'matrixData', 'periodLabel', 'month', 'year', 'config', 'firstYear'
         ));
+    }
+
+    /**
+     * Construye la matriz contable mensual (Reporte Pormenorizado del Mes)
+     * idéntica a la vista reports.matrix con mode='monthly'.
+     */
+    public static function obtenerMatrizMensual(int $month, int $year, ?array $propertyIds = null): array
+    {
+        $unitsQuery = Unit::with([
+            'property',
+            'leases' => function ($q) {
+                $q->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'finished' THEN 2 WHEN 'cancelled' THEN 3 ELSE 4 END ASC, start_date DESC");
+            },
+            'leases.tenant'
+        ]);
+
+        if ($propertyIds !== null) {
+            $unitsQuery->whereIn('property_id', $propertyIds);
+        }
+
+        $units = $unitsQuery->orderBy('code')->get();
+
+        $paymentsQuery = Payment::with(['lease.unit', 'lease.tenant'])
+            ->whereHas('lease.unit', function ($q) use ($propertyIds) {
+                if ($propertyIds !== null) {
+                    $q->whereIn('property_id', $propertyIds);
+                }
+            })
+            ->where(function ($q) use ($year) {
+                $q->whereYear('due_date', $year)
+                  ->orWhere(function ($sq) use ($year) {
+                      $sq->whereNotNull('period_start')->whereYear('period_start', $year);
+                  });
+            });
+
+        $payments = $paymentsQuery->get();
+
+        $selectedPeriod = ucfirst(Carbon::create($year, $month, 1)->locale('es')->isoFormat('MMMM YYYY'));
+
+        $matrix = [];
+        foreach ($units as $unit) {
+            $matrix[$unit->code] = [
+                'rent'        => null,
+                'maintenance' => null,
+            ];
+        }
+
+        foreach ($payments as $payment) {
+            $paymentDate = $payment->period_start ?? $payment->due_date;
+            if (!$paymentDate) continue;
+
+            $pMonth = (int) $paymentDate->month;
+            $pYear  = (int) $paymentDate->year;
+            if ($pYear !== $year || $pMonth !== $month) continue;
+
+            $unitCode = $payment->lease->unit->code ?? null;
+            $type     = $payment->type ?? 'rent';
+
+            if ($unitCode && array_key_exists($unitCode, $matrix)) {
+                $matrix[$unitCode][$type] = $payment;
+            }
+        }
+
+        $statusLabels = [
+            'pending'  => 'Por Facturar',
+            'overdue'  => 'Vencido',
+            'invoiced' => 'Facturado',
+            'paid'     => 'Pagado',
+            'partial'  => 'Parcial',
+        ];
+
+        $rows = [];
+        $gTotalRentSubtotal  = 0;
+        $gTotalRentTax       = 0;
+        $gTotalRentAmount    = 0;
+        $gTotalMaintSubtotal = 0;
+        $gTotalMaintTax      = 0;
+        $gTotalMaintAmount   = 0;
+
+        foreach ($units as $idx => $unit) {
+            $lease = $unit->leases->first();
+            $rentP = $matrix[$unit->code]['rent'] ?? null;
+            $mainP = $matrix[$unit->code]['maintenance'] ?? null;
+
+            // Renta
+            $rSub = $rentP ? (float) $rentP->subtotal : 0.0;
+            $rTax = $rentP ? (float) $rentP->tax_amount : 0.0;
+            $rAmt = $rentP ? (float) $rentP->amount : 0.0;
+
+            // Mantenimiento
+            $mSub = $mainP ? (float) $mainP->subtotal : 0.0;
+            $mTax = $mainP ? (float) $mainP->tax_amount : 0.0;
+            $mAmt = $mainP ? (float) $mainP->amount : 0.0;
+
+            $gTotalRentSubtotal  += $rSub;
+            $gTotalRentTax       += $rTax;
+            $gTotalRentAmount    += $rAmt;
+            $gTotalMaintSubtotal += $mSub;
+            $gTotalMaintTax      += $mTax;
+            $gTotalMaintAmount   += $mAmt;
+
+            $vigencia = '-';
+            if ($lease && $lease->start_date && $lease->end_date) {
+                $vigencia = $lease->start_date->format('d/m/y') . ' - ' . $lease->end_date->format('d/m/y');
+            }
+
+            $rows[] = [
+                'no'           => $idx + 1,
+                'unit_code'    => $unit->code,
+                'tenant_name'  => $lease->tenant->full_name ?? 'VACANTE',
+                'vigencia'     => $vigencia,
+                'rent'         => [
+                    'payment'       => $rentP,
+                    'status'        => $rentP->status ?? null,
+                    'status_label'  => $rentP ? ($statusLabels[$rentP->status] ?? $rentP->status) : '-',
+                    'subtotal'      => $rSub,
+                    'tax'           => $rTax,
+                    'total'         => $rAmt,
+                    'invoice_folio' => $rentP->invoice_folio ?? null,
+                    'period_label'  => $rentP->period_label ?? null,
+                ],
+                'maintenance'  => [
+                    'payment'       => $mainP,
+                    'status'        => $mainP->status ?? null,
+                    'status_label'  => $mainP ? ($statusLabels[$mainP->status] ?? $mainP->status) : '-',
+                    'subtotal'      => $mSub,
+                    'tax'           => $mTax,
+                    'total'         => $mAmt,
+                    'invoice_folio' => $mainP->invoice_folio ?? null,
+                    'period_label'  => $mainP->period_label ?? null,
+                ],
+                'grand_total'  => $rAmt + $mAmt,
+            ];
+        }
+
+        return [
+            'rows'           => $rows,
+            'selectedPeriod' => $selectedPeriod,
+            'totals'         => [
+                'rent_subtotal'        => $gTotalRentSubtotal,
+                'rent_tax'             => $gTotalRentTax,
+                'rent_total'           => $gTotalRentAmount,
+                'maintenance_subtotal' => $gTotalMaintSubtotal,
+                'maintenance_tax'      => $gTotalMaintTax,
+                'maintenance_total'    => $gTotalMaintAmount,
+                'grand_total'          => $gTotalRentAmount + $gTotalMaintAmount,
+            ],
+        ];
     }
 
     /**
@@ -120,7 +269,7 @@ class MonthlyReportController extends Controller
     public function calcularStats(int $month, int $year): array
     {
         $filterDate  = Carbon::create($year, $month, 1);
-        $propertyIds = auth()->user()->allowedPropertyIds();
+        $propertyIds = auth()->check() ? auth()->user()->allowedPropertyIds() : null;
 
         $paymentsQuery = Payment::with(['lease.unit.property', 'lease.tenant'])
             ->whereNotNull('due_date')

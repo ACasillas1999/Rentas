@@ -49,8 +49,9 @@ class SendMonthlyReport extends Command
 
         $this->info("📊 Generando resumen mensual: {$periodLabel}...");
 
-        // ── Calcular estadísticas ─────────────────────────────────────────
+        // ── Calcular estadísticas y matriz ────────────────────────────────
         $stats = $this->calcularEstadisticas($month, $year);
+        $matrixData = \App\Http\Controllers\MonthlyReportController::obtenerMatrizMensual($month, $year);
 
         if ($this->option('dry-run')) {
             $this->mostrarEnConsola($stats, $periodLabel);
@@ -58,7 +59,7 @@ class SendMonthlyReport extends Command
         }
 
         // ── Enviar correo ─────────────────────────────────────────────────
-        $this->enviarCorreo($stats, $periodLabel, $month, $year);
+        $this->enviarCorreo($stats, $periodLabel, $month, $year, $matrixData);
 
         // ── Enviar WhatsApp ───────────────────────────────────────────────
         $this->enviarWhatsApp($stats, $periodLabel);
@@ -173,7 +174,7 @@ class SendMonthlyReport extends Command
     // ─────────────────────────────────────────────────────────────────────
     // Envío de correo
     // ─────────────────────────────────────────────────────────────────────
-    private function enviarCorreo(array $stats, string $periodLabel, int $month, int $year): void
+    private function enviarCorreo(array $stats, string $periodLabel, int $month, int $year, ?array $matrixData = null): void
     {
         $destinatarios = array_map('trim', explode(',', env('REPORT_EMAIL', '')));
         $destinatarios = array_filter($destinatarios);
@@ -185,7 +186,7 @@ class SendMonthlyReport extends Command
 
         try {
             foreach ($destinatarios as $email) {
-                Mail::to($email)->send(new MonthlyReportMail($stats, $periodLabel, $month, $year));
+                Mail::to($email)->send(new MonthlyReportMail($stats, $periodLabel, $month, $year, $matrixData));
                 $this->info("  📧 Correo enviado a: {$email}");
             }
         } catch (\Throwable $e) {

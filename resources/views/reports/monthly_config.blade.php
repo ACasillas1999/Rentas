@@ -262,7 +262,7 @@
 
             {{-- ── Alerta vencidos ── --}}
             @if($stats['inquilinosVencidos']->count() > 0)
-            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:0.9rem;">
+            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:0.9rem; margin-bottom:1.2rem;">
                 <p style="font-size:0.82rem; font-weight:700; color:#991b1b; margin:0 0 0.6rem;">
                     🚨 {{ $stats['inquilinosVencidos']->count() }} pago(s) vencido(s) sin regularizar:
                 </p>
@@ -272,6 +272,140 @@
                     <span style="float:right; font-weight:700;">${{ number_format($v['monto'], 2) }}</span>
                 </div>
                 @endforeach
+            </div>
+            @endif
+
+            {{-- ── Matriz del Mes (Reporte Pormenorizado) ── --}}
+            @if(!empty($matrixData['rows']))
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.7rem;">
+                    <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin:0;">
+                        📋 Matriz de Pagos — Reporte Pormenorizado del Mes
+                    </p>
+                    <a href="{{ route('reports.matrix', ['mode' => 'monthly', 'year' => $year, 'month' => $month]) }}" class="btn btn-light" style="font-size:0.75rem; padding:0.25rem 0.6rem;">
+                        Ver en Matriz ↗
+                    </a>
+                </div>
+                <div style="overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid #e2e8f0; border-radius:12px; background:#fff;">
+                    <table style="font-size:0.78rem; width:100%; border-collapse:collapse; min-width:700px;">
+                        <thead>
+                            <tr style="background:#1e293b; color:#fff;">
+                                <th rowspan="2" style="padding:7px 5px; text-align:center; border:1px solid #334155; font-size:0.7rem;">NO.</th>
+                                <th rowspan="2" style="padding:7px 8px; text-align:center; border:1px solid #334155; font-size:0.7rem;">LOCAL</th>
+                                <th rowspan="2" style="padding:7px 8px; text-align:left; border:1px solid #334155; font-size:0.7rem;">INQUILINO</th>
+                                <th rowspan="2" style="padding:7px 8px; text-align:center; border:1px solid #334155; font-size:0.7rem;">VIGENCIA</th>
+                                <th colspan="4" style="background:#14532d; color:#dcfce7; padding:6px; text-align:center; border:1px solid #166534; font-size:0.7rem;">CONCEPTO DE RENTA</th>
+                                <th colspan="4" style="background:#0c4a6e; color:#e0f2fe; padding:6px; text-align:center; border:1px solid #0369a1; font-size:0.7rem;">CONCEPTO DE MANTENIMIENTO</th>
+                                <th rowspan="2" style="background:#0f172a; color:#fbbf24; padding:7px 8px; text-align:right; border:1px solid #334155; font-size:0.7rem;">GRAN TOTAL</th>
+                            </tr>
+                            <tr style="background:#0f172a; color:#cbd5e1; font-size:0.68rem;">
+                                <th style="padding:5px 6px; background:#166534; border:1px solid #14532d; text-align:center; color:#dcfce7;">Estatus</th>
+                                <th style="padding:5px 6px; background:#166534; border:1px solid #14532d; text-align:right; color:#dcfce7;">Subtotal</th>
+                                <th style="padding:5px 6px; background:#166534; border:1px solid #14532d; text-align:right; color:#dcfce7;">IVA</th>
+                                <th style="padding:5px 6px; background:#166534; border:1px solid #14532d; text-align:right; color:#dcfce7;">Total</th>
+                                <th style="padding:5px 6px; background:#0369a1; border:1px solid #075985; text-align:center; color:#e0f2fe;">Estatus</th>
+                                <th style="padding:5px 6px; background:#0369a1; border:1px solid #075985; text-align:right; color:#e0f2fe;">Subtotal</th>
+                                <th style="padding:5px 6px; background:#0369a1; border:1px solid #075985; text-align:right; color:#e0f2fe;">IVA</th>
+                                <th style="padding:5px 6px; background:#0369a1; border:1px solid #075985; text-align:right; color:#e0f2fe;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($matrixData['rows'] as $r)
+                            @php
+                                $rStatusBg = match($r['rent']['status']) {
+                                    'paid' => '#dcfce7',
+                                    'overdue' => '#fee2e2',
+                                    'invoiced' => '#dbeafe',
+                                    'pending' => '#fef3c7',
+                                    default => '#f1f5f9'
+                                };
+                                $rStatusColor = match($r['rent']['status']) {
+                                    'paid' => '#166534',
+                                    'overdue' => '#991b1b',
+                                    'invoiced' => '#1e40af',
+                                    'pending' => '#92400e',
+                                    default => '#64748b'
+                                };
+                                $mStatusBg = match($r['maintenance']['status']) {
+                                    'paid' => '#dcfce7',
+                                    'overdue' => '#fee2e2',
+                                    'invoiced' => '#dbeafe',
+                                    'pending' => '#fef3c7',
+                                    default => '#f1f5f9'
+                                };
+                                $mStatusColor = match($r['maintenance']['status']) {
+                                    'paid' => '#166534',
+                                    'overdue' => '#991b1b',
+                                    'invoiced' => '#1e40af',
+                                    'pending' => '#92400e',
+                                    default => '#64748b'
+                                };
+                            @endphp
+                            <tr style="border-bottom:1px solid #f1f5f9;">
+                                <td style="padding:6px 4px; text-align:center; color:#64748b; font-size:0.72rem;">{{ $r['no'] }}</td>
+                                <td style="padding:6px 8px; text-align:center; font-weight:700; color:#1e293b;">{{ $r['unit_code'] }}</td>
+                                <td style="padding:6px 8px; text-align:left; font-weight:600; color:#334155; white-space:nowrap;">{{ $r['tenant_name'] }}</td>
+                                <td style="padding:6px 6px; text-align:center; font-size:0.7rem; color:#64748b; white-space:nowrap;">{{ $r['vigencia'] }}</td>
+
+                                {{-- Renta --}}
+                                <td style="padding:4px 6px; text-align:center;">
+                                    @if($r['rent']['status'])
+                                        <span style="display:inline-block; font-size:0.62rem; padding:0.15rem 0.35rem; font-weight:700; border-radius:4px; background:{{ $rStatusBg }}; color:{{ $rStatusColor }}; white-space:nowrap;">
+                                            {{ strtoupper($r['rent']['status_label']) }}
+                                        </span>
+                                        @if($r['rent']['invoice_folio'])
+                                            <div style="font-size:0.62rem; color:#64748b; margin-top:2px;">F: {{ $r['rent']['invoice_folio'] }}</div>
+                                        @endif
+                                    @else
+                                        <span style="color:#cbd5e1;">-</span>
+                                    @endif
+                                </td>
+                                <td style="padding:6px; text-align:right; color:#64748b; white-space:nowrap;">${{ number_format($r['rent']['subtotal'], 2) }}</td>
+                                <td style="padding:6px; text-align:right; color:#64748b; white-space:nowrap;">${{ number_format($r['rent']['tax'], 2) }}</td>
+                                <td style="padding:6px; text-align:right; font-weight:700; color:#166534; background:#f0fdf4; white-space:nowrap;">${{ number_format($r['rent']['total'], 2) }}</td>
+
+                                {{-- Manto --}}
+                                <td style="padding:4px 6px; text-align:center;">
+                                    @if($r['maintenance']['status'])
+                                        <span style="display:inline-block; font-size:0.62rem; padding:0.15rem 0.35rem; font-weight:700; border-radius:4px; background:{{ $mStatusBg }}; color:{{ $mStatusColor }}; white-space:nowrap;">
+                                            {{ strtoupper($r['maintenance']['status_label']) }}
+                                        </span>
+                                        @if($r['maintenance']['invoice_folio'])
+                                            <div style="font-size:0.62rem; color:#64748b; margin-top:2px;">F: {{ $r['maintenance']['invoice_folio'] }}</div>
+                                        @endif
+                                    @else
+                                        <span style="color:#cbd5e1;">-</span>
+                                    @endif
+                                </td>
+                                <td style="padding:6px; text-align:right; color:#64748b; white-space:nowrap;">${{ number_format($r['maintenance']['subtotal'], 2) }}</td>
+                                <td style="padding:6px; text-align:right; color:#64748b; white-space:nowrap;">${{ number_format($r['maintenance']['tax'], 2) }}</td>
+                                <td style="padding:6px; text-align:right; font-weight:700; color:#0369a1; background:#f0f9ff; white-space:nowrap;">${{ number_format($r['maintenance']['total'], 2) }}</td>
+
+                                {{-- Gran Total --}}
+                                <td style="padding:6px 8px; text-align:right; font-weight:800; color:#0f172a; background:#f8fafc; white-space:nowrap;">
+                                    ${{ number_format($r['grand_total'], 2) }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#1e293b; color:#fff; font-weight:700;">
+                                <td colspan="4" style="padding:8px; text-align:right;">TOTALES:</td>
+                                <td style="padding:8px 4px; text-align:center; color:#94a3b8;">—</td>
+                                <td style="padding:8px 6px; text-align:right; white-space:nowrap;">${{ number_format($matrixData['totals']['rent_subtotal'], 2) }}</td>
+                                <td style="padding:8px 6px; text-align:right; white-space:nowrap;">${{ number_format($matrixData['totals']['rent_tax'], 2) }}</td>
+                                <td style="padding:8px 6px; text-align:right; color:#86efac; white-space:nowrap;">${{ number_format($matrixData['totals']['rent_total'], 2) }}</td>
+                                <td style="padding:8px 4px; text-align:center; color:#94a3b8;">—</td>
+                                <td style="padding:8px 6px; text-align:right; white-space:nowrap;">${{ number_format($matrixData['totals']['maintenance_subtotal'], 2) }}</td>
+                                <td style="padding:8px 6px; text-align:right; white-space:nowrap;">${{ number_format($matrixData['totals']['maintenance_tax'], 2) }}</td>
+                                <td style="padding:8px 6px; text-align:right; color:#7dd3fc; white-space:nowrap;">${{ number_format($matrixData['totals']['maintenance_total'], 2) }}</td>
+                                <td style="padding:8px 8px; text-align:right; color:#fde047; font-weight:900; white-space:nowrap;">
+                                    ${{ number_format($matrixData['totals']['grand_total'], 2) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
             @endif
 

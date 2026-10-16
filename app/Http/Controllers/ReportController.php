@@ -379,7 +379,7 @@ class ReportController extends Controller
 
         // Obtener todas las unidades (filtradas por propiedad si se indica)
         $unitsQuery = \App\Models\Unit::with(['property', 'leases' => function($q) {
-            $q->orderByRaw("FIELD(status, 'active', 'finished', 'cancelled') ASC, start_date DESC");
+            $q->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'finished' THEN 2 WHEN 'cancelled' THEN 3 ELSE 4 END ASC, start_date DESC");
         }, 'leases.tenant']);
 
         if ($propertyId) {
